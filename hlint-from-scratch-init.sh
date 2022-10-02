@@ -39,7 +39,7 @@ if [ ! -d "ghc" ]; then
     popd
 else
    # update checkout to origin/master HEAD. not used right now.
-   if [ false ]; then
+   if false; then
        echo "updating ghc..."
        pushd "ghc"
        git clean -xdf && \
@@ -54,8 +54,6 @@ else
        echo "skip clone ghc.."
    fi
 fi
-
-exit 0
 
 if [ ! -d "stack" ]; then
     git clone git@github.com:commercialhaskell/stack.git
