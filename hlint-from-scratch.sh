@@ -101,7 +101,7 @@ locals="locals"
 everything="everything"
 
 # If there's a new release, let's have it.
-if [ 1 ]; then
+if true; then
   cd "$repo_dir/stack"
   git fetch origin && git merge origin/master
   stack --stack-yaml=stack-macos.yaml install
