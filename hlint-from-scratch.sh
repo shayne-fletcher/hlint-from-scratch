@@ -312,7 +312,7 @@ eval "stack" "$stack_yaml_flag" "sdist" "." "--tar-dir" "."
 
 # - Generate a cabal.project of
 #   - ghc-lib, ghc-lib-parser-ex, examples, hlint
-#     - (somwhere like ~/tmp/ghc-lib/ghc-lib-9.4.2.20220821/ghc-9.4.1/cabal.project
+#     - (somwhere like ~/tmp/ghc-lib/ghc-lib-9.4.3.20221104/ghc-9.4.1/cabal.project
 # - and `cabal new-build all`.
 # - Maybe produce haddocks too
 #   - Depending on the contents of `$with_haddock_flag`. Also,
@@ -321,7 +321,7 @@ eval "stack" "$stack_yaml_flag" "sdist" "." "--tar-dir" "."
 tmp_dir="$HOME/tmp"
 mkdir -p "$tmp_dir"
 (cd "$HOME"/tmp && hlint-from-scratch-cabal-build-test.sh  \
-     --ghc-version=ghc-9.4.2                               \
+     --ghc-version=ghc-9.4.3                               \
      --version-tag="$version"                              \
      --ghc-lib-dir="$repo_dir/ghc-lib"                     \
      --ghc-lib-parser-ex-dir="$repo_dir/ghc-lib-parser-ex" \
