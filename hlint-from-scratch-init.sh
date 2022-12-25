@@ -10,21 +10,16 @@ usage="usage: $prog ARG OPTS""
 $opt_args"
 
 repo_dir=""
-# ARG
-if [ -n "$1" ]
-then
+while [ "$#" -gt 0 ]; do
     if [[ "$1" == "--help" ]]; then
         echo "$usage" && exit 0
     elif [[ "$1" =~ --repo-dir=(.*)$ ]]; then
       repo_dir="${BASH_REMATCH[1]}"
     else
-        # There is some "first" argument but it's not a repo-dir as
-        # far as we can tell.
-        printf "repo-dir expected in first argument\n%s" "$usage\n" && exit 0
+        printf "unexpected argument\n%s" "$usage\n" && exit 1
     fi
-fi
-
-set -u
+    shift
+done
 
 if [[ ! -d "$repo_dir" ]]; then
     mkdir -p "$repo_dir"
