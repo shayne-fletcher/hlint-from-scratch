@@ -13,55 +13,74 @@ set -exo pipefail
 prog=$(basename "$0")
 opt_args="
 opts:
+    --ghc-version=ARG
+    --version-tag=ARG
     --ghc-lib-dir=ARG
     --ghc-lib-parser-ex-dir=ARG
     --hlint-dir=ARG
     --build-dir=ARG
-    --with-haddock"
-usage="usage: $prog --ghc-version=ARG --version-tag=ARG [opts]""
+    --with-haddock
+"
+usage="usage: $prog ARGS"
 
-$opt_args"
+ghc_version=""
+version_tag=""
+ghc_lib_dir=""
+ghc_lib_parser_ex_dir=""
+hlint_dir=""
+build_dir=""
+with_haddock=false
 
-[ -n "$1" ] && [[ "$1" =~ "--help" ]] && echo "$usage" && exit 0
-if [ -n "$1" ] && [[ "$1" =~ --ghc-version=(.*)$ ]]; then
-    ghc_version="${BASH_REMATCH[1]}"
-else
+while [ $# -gt 0 ]; do
+    # The way this script is called, $1 can be defined but empty.
+    if [ -z "$1" ]; then
+        :
+    elif [ "$1" = "--help" ]; then
+        echo "$usage" && exit 0
+    elif [[ "$1" =~ --ghc-version=([^[:space:]]+) ]]; then
+        ghc_version="${BASH_REMATCH[1]}"
+    elif [[ "$1" =~ --version-tag=([^[:space:]]+) ]]; then
+        version_tag="${BASH_REMATCH[1]}"
+    elif [[ "$1" =~ --ghc-lib-dir=([^[:space:]]+) ]]; then
+        ghc_lib_dir="${BASH_REMATCH[1]}"
+    elif [[ "$1" =~ --ghc-lib-parser-ex-dir=([^[:space:]]+) ]]; then
+        ghc_lib_parser_ex_dir="${BASH_REMATCH[1]}"
+    elif [[ "$1" =~ --hlint-dir=([^[:space:]]*)+ ]]; then
+        hlint_dir="${BASH_REMATCH[1]}"
+    elif [[ "$1" =~ --build-dir=([^[:space:]]+) ]]; then
+        build_dir="${BASH_REMATCH[1]}"
+    elif [ "$1" = --with-haddock ]; then
+        with_haddock=true
+    else
+        echo "unexpected argument \"$1\""
+        echo "$usage" && exit 1
+    fi
+    shift
+done
+
+[ -z "$ghc_version" ] && \
     echo "Missing ghc-version" && echo "$usage" && exit 1
-fi
-if [ -n "$2" ] && [[ "$2" =~ --version-tag=(.*)$ ]]; then
-   version_tag="${BASH_REMATCH[1]}"
-else
+[ -z "$version_tag" ] && \
     echo "Missing version-tag" && echo "$usage" && exit 1
-fi
-[ -n "$3" ] && [[ "$3" =~ --ghc-lib-dir=(.*)$ ]] && ghc_lib_dir="${BASH_REMATCH[1]}"
 [ -z "$ghc_lib_dir" ] && \
     ghc_lib_dir="$HOME/project/sf-ghc-lib" && \
     echo "Missing 'ghc-lib-dir': defaulting to $ghc_lib_dir"
 [ ! -e  "$ghc_lib_dir" ] && { echo "\"$ghc_lib_dir\" does not exist" && exit 1;  }
-
-[ -n "$4" ] && [[ "$4" =~ --ghc-lib-parser-ex-dir=(.*)$ ]] && ghc_lib_parser_ex_dir="${BASH_REMATCH[1]}"
 [ -z "$ghc_lib_parser_ex_dir" ] && \
     ghc_lib_parser_ex_dir="$HOME/project/ghc-lib-parser-ex" && \
     echo "Missing 'ghc-lib-parser-ex-dir': defaulting to $ghc_lib_parser_ex_dir"
 [ ! -e  "$ghc_lib_parser_ex_dir" ] && { echo "\"$ghc_lib_parser_ex_dir\" does not exist" && exit 1;  }
-
-[ -n "$5" ] && [[ "$5" =~ --hlint-dir=(.*)$ ]] && hlint_dir="${BASH_REMATCH[1]}"
 [ -z "$hlint_dir" ] && \
     hlint_dir="$HOME/project/hlint" && \
     echo "Missing 'hlint-dir': defaulting to $hlint_dir"
 [ ! -e  "$hlint_dir" ] && { echo "\"$hlint_dir\" does not exist" && exit 1;  }
-
-[ -n "$6" ] && [[ "$6" =~ --build-dir=(.*)$ ]] && build_dir="${BASH_REMATCH[1]}"
 [ -z "$build_dir" ] && \
     build_dir="$HOME/tmp/ghc-lib/$version_tag" && \
     echo "Missing 'build-dir': defaulting to $build_dir"
 
-with_haddock=false
-[ -n "$7" ] && [[ "$7" =~ --with-haddock$ ]] && with_haddock=true
-
 set -u
 
-[[ ! -f "$HOME/$ghc_version/bin/ghc" ]] && { echo "$HOME/$ghc_version/bin/ghc not found" && exit 1; }
+[ ! -f "$HOME/$ghc_version/bin/ghc" ] && { echo "$HOME/$ghc_version/bin/ghc not found" && exit 1; }
 PATH="$HOME/$ghc_version/bin:$PATH"
 export PATH
 

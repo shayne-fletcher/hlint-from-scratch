@@ -14,85 +14,95 @@
 # - Quickest
 #   - `hlint-from-scratch --ghc-flavor="" "--no-checkout --no-builds --no-cabal --no-haddock`
 
-set -exo pipefail
+set -eo pipefail
 
 prog=$(basename "$0")
-opt_args="
-ARG can be a flavor or the empty string e.g. --ghc-flavor=\"\"
-OPTS is a quoted string with contents e.g: \"--no-checkout --no-builds --no-cabal --no-haddock\""
-usage="usage: $prog --ghc-flavor=ARG OPTS""
-$opt_args"
+args="
+  --help
+    Print a usage message and exit.
+
+  --init ARG
+    Create a directory of git clones and exit.
+
+  --ghc-flavor ARG
+    Select a specific ghc-flavor. Default's to GHC's HEAD.
+
+  --repo-dir ARG
+    A directory of git clones. Defaults to $HOME/project.
+
+  --no-checkout
+    Reuse an existing GHC clone in ghc-lib-parser.
+
+  --no-builds
+    Don't build & test ghc-lib packages and examples.
+
+  --no-cabal
+    Skip building the hlint stack as a cabal project.
+
+  --no-haddock
+    Disable generating haddocks (only has meaning if --no-cabal is not provided).
+"
+usage="usage: $prog ARGS"
 
 GHC_FLAVOR=""
-# ARG
-if [ -n "$1" ]
-then
-    if [[ "$1" == "--help" ]]; then
-        echo "$usage" && exit 0
-    elif [[ "$1" =~ --ghc-flavor=(.*)$ ]]; then
-      GHC_FLAVOR="${BASH_REMATCH[1]}"
-    elif [[ "$1" =~ --init=(.*)$ ]]; then
-      init_arg="${BASH_REMATCH[1]}"
-      hlint-from-scratch-init --repo-dir="$init_arg"
-      echo "repo-dir \"$repo_dir\" initialized"
-      echo "next: hlint-from-scratch --ghc-flavor=... ... --repo-dir=$repo_dir"
-      exit 0
-    else
-        echo "expected --ghc-flavor=... or --init=... in first argument"
-        echo "$usage" && exit 0
-    fi
-fi
+no_builds=""
+no_cabal=""
+stack_yaml=""
+stack_yaml_flag=""
+resolver=""
+resolver_flag=""
+repo_dir="$HOME/project"
+with_haddock_flag="--with-hadock"
 
-# OPTS
-opts=""
-if [ -n "$2" ]; then
-    opts="$2"
-fi
+while [ $# -gt 0 ]; do
+    if [ "$1" = "--help" ]; then
+        echo "$usage" && exit 0
+    elif [[ "$1" =~ --ghc-flavor=([^[:space:]]*) ]]; then
+        GHC_FLAVOR="${BASH_REMATCH[1]}"
+    elif [[ "$1" =~ --init=([^[:space:]]+) ]]; then
+        init_arg="${BASH_REMATCH[1]}"
+        hlint-from-scratch-init --repo-dir="$init_arg"
+        echo "repo-dir \"$repo_dir\" initialized"
+        echo "next: hlint-from-scratch --ghc-flavor=... ... --repo-dir=$repo_dir"
+        exit 0
+    elif [[ "$1" =~ --repo-dir=([^[:space:]]+) ]]; then
+        repo_dir="${BASH_REMATCH[1]}"
+    elif [[ "$1" =~ --stack-yaml=([^[:space:]]+) ]]; then
+        stack_yaml="${BASH_REMATCH[1]}"
+        stack_yaml_flag="--stack-yaml $stack_yaml"
+    elif [[ "$1" =~ --resolver=([^[:space:]]+) ]]; then
+        resolver="${BASH_REMATCH[1]}"
+        resolver_flag="--resolver $resolver"
+    elif [ "$1" = "--no-checkout" ]; then
+        no_checkout="--no-checkout"
+        echo "cloning ghc skipped."
+    elif [ "$1" = "--no-builds" ]; then
+        no_builds="--no-builds"
+        echo "ghc-lib package & examples building skipped."
+    elif [ "$1" = "--no-cabal" ]; then
+        no_cabal="--no-cabal"
+        echo "hlint stack as a cabal.project building skipped."
+    elif [ "$1" = "--no-haddock" ]; then
+        with_haddock_flag=""
+        echo "generation haddocks skipped."
+    else
+        echo "unexpected argument \"$1\""
+        echo "$usage" && exit 1
+    fi
+    shift
+done
 
 set -u
 
-no_checkout=""
-if [[ "$opts" == *"--no-checkout"* ]]; then
-  no_checkout="--no-checkout"
-  echo "cloning ghc skipped."
-fi
-no_builds=""
-if [[ "$opts" == *"--no-builds"* ]]; then
-  no_builds="--no-builds"
-  echo "ghc-lib package & examples building skipped."
-fi
-no_cabal=""
-if [[ "$opts" == *"--no-cabal"* ]]; then
-  no_cabal="--no-cabal"
-  echo "hlint stack as a cabal.project building skipped."
-fi
-stack_yaml=""
-stack_yaml_flag=""
-if [[ "$opts" =~ (.*)--stack-yaml=([^[:space:]]+) ]]; then
-  stack_yaml="${BASH_REMATCH[2]}"
-  stack_yaml_flag="--stack-yaml $stack_yaml"
-fi
-resolver=""
-resolver_flag=""
-if [[ "$opts" =~ (.*)--resolver=([^[:space:]]+) ]]; then
-  resolver="${BASH_REMATCH[2]}"
-  resolver_flag="--resolver $resolver"
-fi
-repo_dir="$HOME/project"
-if [[ "$opts" =~ (.*)--repo-dir=([^[:space:]]+) ]]; then
-  repo_dir="${BASH_REMATCH[2]}"
-fi
-with_haddock_flag="--with-hadock"
-if [[ "$opts" == *"--no-haddock"* ]]; then
-  with_haddock_flag=""
-  echo "generation haddocks skipped."
-fi
-
+echo "ghc-flavor: $GHC_FLAVOR"
 echo "stack-yaml: $stack_yaml"
 echo "stack-yaml flag: $stack_yaml_flag"
 echo "resolver: $resolver"
 echo "resolver flag: $resolver_flag"
 echo "repo-dir: $repo_dir"
+echo "no-builds: $no_builds"
+echo "no-cabal: $no_cabal"
+echo "with-haddock flag: $with_haddock_flag"
 
 packages="--package extra --package optparse-applicative"
 runhaskell="stack runhaskell $packages"
@@ -245,7 +255,8 @@ branch=$(git rev-parse --abbrev-ref HEAD)
 # if the flavor indicates ghc's master branch get on hlint's
 # 'ghc-next' branch ...
 if [[ -z "$GHC_FLAVOR" \
-   || "$GHC_FLAVOR" == "ghc-master" ]]; then
+   || "$GHC_FLAVOR" == "ghc-master"
+ ]]; then
   if [[ "$branch" != "ghc-next" ]]; then
     echo "Not on ghc-next. Trying 'git checkout ghc-next'"
     git checkout ghc-next
@@ -321,7 +332,7 @@ eval "stack" "$stack_yaml_flag" "sdist" "." "--tar-dir" "."
 tmp_dir="$HOME/tmp"
 mkdir -p "$tmp_dir"
 (cd "$HOME"/tmp && hlint-from-scratch-cabal-build-test.sh  \
-     --ghc-version=ghc-9.4.3                               \
+     --ghc-version=ghc-9.4.4                               \
      --version-tag="$version"                              \
      --ghc-lib-dir="$repo_dir/ghc-lib"                     \
      --ghc-lib-parser-ex-dir="$repo_dir/ghc-lib-parser-ex" \
