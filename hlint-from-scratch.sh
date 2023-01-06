@@ -41,6 +41,9 @@ args="
 
   --no-haddock
     Disable generating haddocks (only has meaning if --no-cabal is not provided).
+
+  --no-threaded-rts
+    Disable passing -DTHREADED_RTS to the C toolchain when building ghc-lib-parser & ghc-lib.
 "
 usage="usage: $prog ARGS"
 
@@ -53,6 +56,8 @@ resolver=""
 resolver_flag=""
 repo_dir="$HOME/project"
 with_haddock_flag="--with-hadock"
+no_threaded_rts=false
+no_threaded_rts_flag=""
 
 while [ $# -gt 0 ]; do
     if [ "$1" = "--help" ]; then
@@ -85,12 +90,21 @@ while [ $# -gt 0 ]; do
     elif [ "$1" = "--no-haddock" ]; then
         with_haddock_flag=""
         echo "generation haddocks skipped."
+    elif [ "$1" = "--no-threaded-rts" ]; then
+        no_threaded_rts=true
+        no_threaded_rts_flag="--no-threaded-rts"
+        echo "-DTHREADED_RTS will not be passed to the C toolchain building ghc-lib-parser & ghc-lib."
     else
         echo "unexpected argument \"$1\""
         echo "$usage" && exit 1
     fi
     shift
 done
+
+threaded_rts="true"
+if "$no_threaded_rts"; then
+  threaded_rts="false"
+fi
 
 set -u
 
@@ -103,6 +117,9 @@ echo "repo-dir: $repo_dir"
 echo "no-builds: $no_builds"
 echo "no-cabal: $no_cabal"
 echo "with-haddock flag: $with_haddock_flag"
+echo "no-threaded-rts: $no_threaded_rts"
+echo "no-threaded-rts-flag: $no_threaded_rts_flag"
+echo "threaded-rts: \"$threaded_rts\""
 
 packages="--package extra --package optparse-applicative"
 runhaskell="stack runhaskell $packages"
@@ -233,6 +250,8 @@ ghc-options:
     "$DOLLAR$everything": -j
     "$DOLLAR$locals": -ddump-to-file -ddump-hi -Wall -Wno-name-shadowing -Wunused-imports
 flags:
+ ghc-lib-parser:
+   threaded-rts: $threaded_rts
   ghc-lib-parser-ex:
     auto: false
     no-ghc-lib: false
@@ -288,6 +307,8 @@ ghc-options:
 flags:
  hlint:
    ghc-lib: true
+ ghc-lib-parser:
+   threaded-rts: $threaded_rts
  ghc-lib-parser-ex:
    auto: false
    no-ghc-lib: false
@@ -338,5 +359,5 @@ mkdir -p "$tmp_dir"
      --ghc-lib-parser-ex-dir="$repo_dir/ghc-lib-parser-ex" \
      --hlint-dir="$repo_dir/hlint"                         \
      --build-dir="$tmp_dir/ghc-lib/$version"               \
-     "$with_haddock_flag"                                  \
+     "$no_threaded_rts_flag"                               \
 )

@@ -20,6 +20,7 @@ opts:
     --hlint-dir=ARG
     --build-dir=ARG
     --with-haddock
+    --no-threaded-rts
 "
 usage="usage: $prog ARGS"
 
@@ -30,6 +31,7 @@ ghc_lib_parser_ex_dir=""
 hlint_dir=""
 build_dir=""
 with_haddock=false
+no_threaded_rts=false
 
 while [ $# -gt 0 ]; do
     # The way this script is called, $1 can be defined but empty.
@@ -51,6 +53,8 @@ while [ $# -gt 0 ]; do
         build_dir="${BASH_REMATCH[1]}"
     elif [ "$1" = --with-haddock ]; then
         with_haddock=true
+    elif [ "$1" = --no-threaded-rts ]; then
+        no_threaded_rts=true
     else
         echo "unexpected argument \"$1\""
         echo "$usage" && exit 1
@@ -130,13 +134,20 @@ haddock-html-location: http://hackage.haskell.org/packages/archive/$DOLLAR$pkg/l
 "
 fi
 
+threaded_rts="+threaded-rts"
+if "$no_threaded_rts"; then
+  threaded_rts="-threaded-rts"
+fi
+
 # Requires cabal-instal >= 3.8.1.0
 # (reference https://cabal.readthedocs.io/en/3.8/index.html)
 cat > cabal.project<<EOF
 packages:    */*.cabal
-constraints: hlint +ghc-lib, ghc-lib-parser-ex -auto -no-ghc-lib
+constraints: hlint +ghc-lib, ghc-lib-parser-ex -auto -no-ghc-lib, ghc-lib $threaded_rts, ghc-lib-parser $threaded_rts
 $haddock
 EOF
+
+cat cabal.project
 
 # clean
 cabal new-clean
