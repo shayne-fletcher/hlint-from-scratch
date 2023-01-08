@@ -24,11 +24,17 @@ args="
   --init ARG
     Create a directory of git clones and exit.
 
-  --ghc-flavor ARG
+  --ghc-flavor=ARG
     Select a specific ghc-flavor. Default's to GHC's HEAD.
 
-  --repo-dir ARG
+  --repo-dir=ARG
     A directory of git clones. Defaults to $HOME/project.
+
+  --stack-yaml=ARG
+    Stack configuration file.
+
+  --resolver=ARG
+    Stack resolver.
 
   --no-checkout
     Reuse an existing GHC clone in ghc-lib-parser.
