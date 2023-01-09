@@ -296,7 +296,7 @@ else
 fi
 
 # We're stuck with only curated resolvers for hlint at this time.
-resolver=nightly-2022-08-04 # ghc-9.2.4
+resolver=nightly-2023-01-01 # ghc-9.4.4
 
 cat > stack-head.yaml <<EOF
 resolver: $resolver
