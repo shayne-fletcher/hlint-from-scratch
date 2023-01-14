@@ -64,6 +64,7 @@ repo_dir="$HOME/project"
 with_haddock_flag="--with-hadock"
 no_threaded_rts=false
 no_threaded_rts_flag=""
+no_checkout_flag=""
 
 while [ $# -gt 0 ]; do
     if [ "$1" = "--help" ]; then
@@ -85,7 +86,7 @@ while [ $# -gt 0 ]; do
         resolver="${BASH_REMATCH[1]}"
         resolver_flag="--resolver $resolver"
     elif [ "$1" = "--no-checkout" ]; then
-        no_checkout="--no-checkout"
+        no_checkout_flag="--no-checkout"
         echo "cloning ghc skipped."
     elif [ "$1" = "--no-builds" ]; then
         no_builds="--no-builds"
@@ -189,7 +190,7 @@ fi
 
 # ghc-lib
 
-cmd="$runhaskell $stack_yaml_flag $resolver_flag CI.hs -- $stack_yaml_flag $resolver_flag $no_checkout $no_builds --ghc-flavor "
+cmd="$runhaskell $stack_yaml_flag $resolver_flag CI.hs -- $stack_yaml_flag $resolver_flag $no_checkout_flag $no_builds --ghc-flavor "
 if [ -z "$GHC_FLAVOR" ]; then
     eval "$cmd" "$HEAD"
 else
