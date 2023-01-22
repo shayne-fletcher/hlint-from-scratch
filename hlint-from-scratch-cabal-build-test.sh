@@ -121,11 +121,11 @@ for f in "${packages[@]}"; do
   (cd "${base%.tar.gz}" && cabal check)
 done
 
-# Write a project tarball like e.g.
-# '~/tmp/ghc-lib/hint-20230122.tar.gz'
+# ../.. is the parent of $version_tag/$ghc_version i.e. ~/tmp/ghc-lib
 tar_artifact="hlint-$version_tag.tar"
 zipped_tar_artifact="$tar_artifact.gz"
 rm -rf "dist-newstyle"
+(cd ../.. && rm -f "$tar_artifact" "$zipped_tar_artifact" && rm -rf "hlint-$version_tag")
 (cd ../.. && mkdir -p "hlint-$version_tag" && cd "hlint-$version_tag" && cp -R "$build_dir_for_this_ghc"/* .)
 (cd ../../ && tar cvf "$tar_artifact" "hlint-$version_tag" && rm -rf "hlint-$version_tag")
 (cd ../.. && gzip "$tar_artifact" && rm "$tar_artifact")
