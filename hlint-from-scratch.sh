@@ -175,7 +175,7 @@ if [ -z "$GHC_FLAVOR" ]; then
   current=$(grep "current = .*" CI.hs | grep -o "\".*\"" | cut -d "\"" -f 2)
   if [[ "$current" == "$HEAD" ]]; then
     echo "The last \"tested at\" SHA (\"$current\") hasn't changed"
-    exit 0
+    exit 99 # So as to stop e.g. stop 'hlint-from-scratch-matrix-build.sh' too.
   fi
 fi
 

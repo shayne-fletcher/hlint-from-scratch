@@ -120,6 +120,15 @@ for f in "${packages[@]}"; do
   base=$(basename "$f")
   (cd "${base%.tar.gz}" && cabal check)
 done
+
+# Write a project tarball like e.g.
+# '~/tmp/ghc-lib/hint-20230122.tar.gz'
+tar_artifact="hlint-$version_tag.tar"
+zipped_tar_artifact="$tar_artifact.gz"
+rm -rf "dist-newstyle"
+tar cvf ../../"$tar_artifact" .
+(cd ../.. && gzip "$tar_artifact" && rm "$tar_artifact")
+
 set -e
 
 haddock=""

@@ -40,7 +40,8 @@ resolvers=("ghc-9.4.4" "ghc-9.2.5")
 for f in "${flavors[@]}"; do
     for r in "${resolvers[@]}"; do
         echo "-- "
-        eval "PATH="$HOME"/project/hlint-from-scratch:$PATH" "hlint-from-scratch --ghc-flavor="$f" --no-checkout --no-builds --no-cabal --no-haddock --stack-yaml=stack-exact.yaml --resolver="$r""
+        eval "hlint-from-scratch --ghc-flavor="$f" --no-checkout --no-builds --no-cabal --no-haddock --stack-yaml=stack-exact.yaml --resolver="$r""
+      git checkout CI.hs # restore last tested hash
     done
 done
 
