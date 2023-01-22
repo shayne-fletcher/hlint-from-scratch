@@ -126,7 +126,8 @@ done
 tar_artifact="hlint-$version_tag.tar"
 zipped_tar_artifact="$tar_artifact.gz"
 rm -rf "dist-newstyle"
-tar cvf ../../"$tar_artifact" .
+(cd ../.. && mkdir -p "hlint-$version_tag" && cd "hlint-$version_tag" && cp -R "$build_dir_for_this_ghc"/* .)
+(cd ../../ && tar cvf "$tar_artifact" "hlint-$version_tag" && rm -rf "hlint-$version_tag")
 (cd ../.. && gzip "$tar_artifact" && rm "$tar_artifact")
 
 set -e
