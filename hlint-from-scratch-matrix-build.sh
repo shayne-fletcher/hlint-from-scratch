@@ -34,14 +34,15 @@ fi
 
 pushd "ghc-lib"
 
-head="\"\""
-flavors=("$head" "ghc-9.6.1")
+flavors=("" "ghc-master" "ghc-9.6.1")
 resolvers=("ghc-9.4.4" "ghc-9.2.5")
 for f in "${flavors[@]}"; do
     for r in "${resolvers[@]}"; do
         echo "-- "
-        eval "hlint-from-scratch --ghc-flavor="$f" --no-checkout --no-builds --no-cabal --no-haddock --stack-yaml=stack-exact.yaml --resolver="$r""
-      git checkout CI.hs # restore last tested hash
+        hlint-from-scratch --ghc-flavor="$f" --no-checkout --no-builds --no-haddock --stack-yaml=stack-exact.yaml --resolver="$r"
+        if false;  then
+          git checkout CI.hs # restore last tested shas
+        fi
     done
 done
 

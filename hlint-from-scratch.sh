@@ -135,10 +135,11 @@ locals="locals"
 everything="everything"
 
 # If there's a new release, let's have it.
-if false; then
-  cd "$repo_dir/stack"
-  git fetch origin && git merge origin/master
-  stack --stack-yaml=stack-macos.yaml install
+if true; then
+  # cd "$repo_dir/stack"
+  # git fetch origin && git merge origin/master
+  # stack install
+  :
 else
   stack upgrade # Upgrade to the latest official
 fi
@@ -338,8 +339,8 @@ allow-newer: true
 EOF
 
 # Again, it would be wrong to pass $resolver_flag here.
-eval "stack" "$stack_yaml_flag" "build"
-eval "stack" "$stack_yaml_flag" "run" "--" "--test"
+eval "C_INCLUDE_PATH="$(xcrun --show-sdk-path)"/usr/include/ffi" "stack" "$stack_yaml_flag" "build"
+eval "C_INCLUDE_PATH="$(xcrun --show-sdk-path)"/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "--test"
 
 # --
 # - phase: test-ghc-9.0.sh
