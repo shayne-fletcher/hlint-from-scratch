@@ -41,7 +41,7 @@ for f in "${flavors[@]}"; do
         echo "-- "
         hlint-from-scratch --ghc-flavor="$f" --no-checkout --no-builds --no-haddock --stack-yaml=stack-exact.yaml --resolver="$r"
         if false;  then
-          git checkout CI.hs # restore last tested shas
+          git checkout CI.hs # restore "Last tested gitlab.haskell.org/ghc/ghc.git " sha
         fi
     done
 done
