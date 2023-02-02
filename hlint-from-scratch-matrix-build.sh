@@ -34,17 +34,45 @@ fi
 
 pushd "ghc-lib"
 
-flavors=("" "ghc-master" "ghc-9.6.1")
-resolvers=("ghc-9.4.4" "ghc-9.2.5")
+# these are hlint buildable
+head=""
+flavors=("$head" "ghc-master" "ghc-9.6.1" "ghc-9.4.4")
+resolvers=("ghc-9.4.4")
 for f in "${flavors[@]}"; do
     for r in "${resolvers[@]}"; do
         echo "-- "
-        hlint-from-scratch --ghc-flavor="$f" --no-checkout --no-builds --no-haddock --stack-yaml=stack-exact.yaml --resolver="$r"
-        if false;  then
-          git checkout CI.hs # restore "Last tested gitlab.haskell.org/ghc/ghc.git " sha
-        fi
+        hlint-from-scratch --ghc-flavor="$f" --cabal-with-ghc="$r" --no-checkout --no-builds --no-haddock --stack-yaml=stack-exact.yaml --resolver="$r"
+        git checkout CI.hs # restore "Last tested gitlab.haskell.org/ghc/ghc.git " sha
     done
 done
+
+# these are hlint buildable
+flavors=("ghc-9.6.1" "ghc-9.4.4")
+resolvers=("ghc-9.2.5")
+for f in "${flavors[@]}"; do
+    for r in "${resolvers[@]}"; do
+        echo "-- "
+        hlint-from-scratch --ghc-flavor="$f" --cabal-with-ghc="$r" --no-checkout --no-builds --no-haddock --stack-yaml=stack-exact.yaml --resolver="$r"
+        git checkout CI.hs # restore "Last tested gitlab.haskell.org/ghc/ghc.git " sha
+    done
+done
+
+# this is hlint buildable
+flavors=("ghc-9.4.4") # these are not: "ghc-9.2.5" "ghc-9.0.2"
+resolvers=("ghc-9.0.2")
+for f in "${flavors[@]}"; do
+    for r in "${resolvers[@]}"; do
+        echo "-- "
+        hlint-from-scratch --ghc-flavor="$f" --cabal-with-ghc="$r" --no-checkout --no-builds --no-haddock --stack-yaml=stack-exact.yaml --resolver="$r"
+        git checkout CI.hs # restore "Last tested gitlab.haskell.org/ghc/ghc.git " sha
+    done
+done
+
+# don't run this script again until there's a new commit upstream
+git checkout .
+fast="--stack-yaml=stack-exact.yaml --resolver=ghc-9.4.4 --no-checkout --no-builds --no-cabal"
+PATH=/Users/shayne/project/hlint-from-scratch:"$PATH" hlint-from-scratch --ghc-flavor="" "$fast"
+git checkout examples ghc-lib-gen.cabal
 
 popd
 popd

@@ -45,6 +45,9 @@ args="
   --no-cabal
     Skip building the hlint stack as a cabal project.
 
+  --cabal-with-ghc
+    Provide a ghc version for cabal builds e.g. ghc-9.2.5
+
   --no-haddock
     Disable generating haddocks (only has meaning if --no-cabal is not provided).
 
@@ -56,6 +59,7 @@ usage="usage: $prog $args"
 GHC_FLAVOR=""
 no_builds=""
 no_cabal=""
+cabal_with_ghc="ghc-9.4.4"
 stack_yaml=""
 stack_yaml_flag=""
 resolver=""
@@ -85,6 +89,8 @@ while [ $# -gt 0 ]; do
     elif [[ "$1" =~ --resolver=([^[:space:]]+) ]]; then
         resolver="${BASH_REMATCH[1]}"
         resolver_flag="--resolver $resolver"
+    elif [[ "$1" =~ --cabal-with-ghc=([^[:space:]]+) ]]; then
+        cabal_with_ghc="${BASH_REMATCH[1]}"
     elif [ "$1" = "--no-checkout" ]; then
         no_checkout_flag="--no-checkout"
         echo "cloning ghc skipped."
@@ -108,6 +114,8 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+cabal_with_ghc_flag="--ghc-version=$cabal_with_ghc"
+
 threaded_rts="true"
 if "$no_threaded_rts"; then
   threaded_rts="false"
@@ -123,6 +131,7 @@ echo "resolver flag: $resolver_flag"
 echo "repo-dir: $repo_dir"
 echo "no-builds: $no_builds"
 echo "no-cabal: $no_cabal"
+echo "cabal-with-ghc-flag: $cabal_with_ghc_flag"
 echo "with-haddock flag: $with_haddock_flag"
 echo "no-threaded-rts: $no_threaded_rts"
 echo "no-threaded-rts-flag: $no_threaded_rts_flag"
@@ -172,8 +181,10 @@ if [ -z "$GHC_FLAVOR" ]; then
   if [ -z "$HEAD" ]; then
       echo "\$HEAD is empty. Trying over." && hlint-from-scratch
   fi
+  echo "HEAD: $HEAD"
   # If $HEAD agrees with the "last tested at" SHA in CI.hs stop here.
   current=$(grep "current = .*" CI.hs | grep -o "\".*\"" | cut -d "\"" -f 2)
+  echo "CI.hs (last tested at): $current"
   if [[ "$current" == "$HEAD" ]]; then
     echo "The last \"tested at\" SHA (\"$current\") hasn't changed"
     exit 99 # So as to stop e.g. stop 'hlint-from-scratch-matrix-build.sh' too.
@@ -375,7 +386,7 @@ eval "stack" "$stack_yaml_flag" "sdist" "." "--tar-dir" "."
 tmp_dir="$HOME/tmp"
 mkdir -p "$tmp_dir"
 (cd "$HOME"/tmp && hlint-from-scratch-cabal-build-test.sh  \
-     --ghc-version=ghc-9.4.4                               \
+     "$cabal_with_ghc_flag"                                \
      --version-tag="$version"                              \
      --ghc-lib-dir="$repo_dir/ghc-lib"                     \
      --ghc-lib-parser-ex-dir="$repo_dir/ghc-lib-parser-ex" \
