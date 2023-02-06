@@ -182,6 +182,7 @@ if [ -z "$GHC_FLAVOR" ]; then
       echo "\$HEAD is empty. Trying over." && hlint-from-scratch
   fi
   echo "HEAD: $HEAD"
+
   # If $HEAD agrees with the "last tested at" SHA in CI.hs stop here.
   current=$(grep "current = .*" CI.hs | grep -o "\".*\"" | cut -d "\"" -f 2)
   echo "CI.hs (last tested at): $current"
@@ -189,6 +190,11 @@ if [ -z "$GHC_FLAVOR" ]; then
     echo "The last \"tested at\" SHA (\"$current\") hasn't changed"
     exit 99 # So as to stop e.g. stop 'hlint-from-scratch-matrix-build.sh' too.
   fi
+
+  # $HEAD is new. Summarize the new commits.
+  (cd ghc && PAGER=cat git show $current..$HEAD --compact-summary)
+   echo "-- "
+
 fi
 
 today=$(date -u +'%Y-%m-%d')
