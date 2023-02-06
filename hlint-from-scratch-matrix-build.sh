@@ -41,7 +41,7 @@ resolvers=("ghc-9.4.4")
 for f in "${flavors[@]}"; do
     for r in "${resolvers[@]}"; do
         echo "-- "
-        hlint-from-scratch --ghc-flavor="$f" --cabal-with-ghc="$r" --no-checkout --no-builds --no-haddock --stack-yaml=stack-exact.yaml --resolver="$r"
+        hlint-from-scratch --ghc-flavor="$f" --cabal-with-ghc="$r" --no-checkout --no-haddock --stack-yaml=stack-exact.yaml --resolver="$r"
         git checkout CI.hs # restore "Last tested gitlab.haskell.org/ghc/ghc.git " sha
     done
 done
@@ -63,15 +63,14 @@ resolvers=("ghc-9.0.2")
 for f in "${flavors[@]}"; do
     for r in "${resolvers[@]}"; do
         echo "-- "
-        hlint-from-scratch --ghc-flavor="$f" --cabal-with-ghc="$r" --no-checkout --no-builds --no-haddock --stack-yaml=stack-exact.yaml --resolver="$r"
+        hlint-from-scratch --ghc-flavor="$f" --cabal-with-ghc="$r" --no-checkout --no-haddock --stack-yaml=stack-exact.yaml --resolver="$r"
         git checkout CI.hs # restore "Last tested gitlab.haskell.org/ghc/ghc.git " sha
     done
 done
 
 # don't run this script again until there's a new commit upstream
 git checkout .
-fast="--stack-yaml=stack-exact.yaml --resolver=ghc-9.4.4 --no-checkout --no-builds --no-cabal"
-PATH=/Users/shayne/project/hlint-from-scratch:"$PATH" hlint-from-scratch --ghc-flavor="" "$fast"
+PATH=/Users/shayne/project/hlint-from-scratch:"$PATH" hlint-from-scratch --ghc-flavor="" --stack-yaml=stack-exact.yaml --resolver=ghc-9.4.4 --no-checkout --no-builds --no-cabal
 git checkout examples ghc-lib-gen.cabal
 
 popd
