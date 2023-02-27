@@ -47,8 +47,8 @@ for f in "${flavors[@]}"; do
 done
 
 # these are hlint buildable
-flavors=("ghc-9.6.1" "ghc-9.4.4")
-resolvers=("ghc-9.2.5")
+flavors=("ghc-9.6.1" "ghc-9.4.4") # these are not: "ghc-9.2.x"
+resolvers=("ghc-9.2.6")
 for f in "${flavors[@]}"; do
     for r in "${resolvers[@]}"; do
         echo "-- "
@@ -58,7 +58,7 @@ for f in "${flavors[@]}"; do
 done
 
 # this is hlint buildable
-flavors=("ghc-9.4.4") # these are not: "ghc-9.2.5" "ghc-9.0.2"
+flavors=("ghc-9.4.4") # these are not: "ghc-9.2.6" "ghc-9.0.2"
 resolvers=("ghc-9.0.2")
 for f in "${flavors[@]}"; do
     for r in "${resolvers[@]}"; do

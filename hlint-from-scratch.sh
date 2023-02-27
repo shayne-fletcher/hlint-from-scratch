@@ -183,6 +183,32 @@ if [ -z "$GHC_FLAVOR" ]; then
   fi
   echo "HEAD: $HEAD"
 
+  # Get the latest on ghc-9.6 too.
+  GHC_961=$(cd ghc && git log origin/ghc-9.6 -n 1 | head -n 1 | awk '{ print $2 }')
+
+  echo "master: $HEAD"
+  echo "ghc-9.6: $GHC_961"
+
+  current_ghc961=""
+  if [ -e "ghc-9.6.1-last-tested-at" ]; then
+    current_ghc961="$(cat ghc-9.6.1-last-tested-at)"
+    if [[ "$current_ghc961" == "$GHC_961" ]]; then
+      echo "The current ghc-9.6 \"tested at\" SHA ("$current_ghc961") hasn't changed"
+    else
+      echo "-- "
+      echo "There have been changes on the 9.6 branch"
+      # $GHC_961 is new. Summarize the new commits.
+      (cd ghc && PAGER=cat git show "$current_ghc961".."$GHC_961" --compact-summary)
+      echo "-- "
+      fi
+  else
+      current_ghc961="$GHC_961"
+  fi
+  # In any case, update the last tested at ghc-9.6 SHA.
+  cat > ghc-9.6.1-last-tested-at <<EOF
+$GHC_961
+EOF
+
   # If $HEAD agrees with the "last tested at" SHA in CI.hs stop here.
   current=$(grep "current = .*" CI.hs | grep -o "\".*\"" | cut -d "\"" -f 2)
   echo "CI.hs (last tested at): $current"
