@@ -292,6 +292,8 @@ if [[ -n "$stack_yaml" ]]; then
   # Delete any pre-existing ghc-lib-parser extra dependency.
   sed -e "s;^.*ghc-lib-parser.*$;;g" | \
   sed -e "s;^extra-deps:$;\
+# enable ghc-9.6.1 as a build compiler (base-4.18.0)\n\
+allow-newer: True\n\
 extra-deps:\n\
   # ghc-lib-parser\n\
   - archive: ${repo_dir}/ghc-lib/ghc-lib-parser-${version}.tar.gz\n\
@@ -381,9 +383,12 @@ flags:
 allow-newer: true
 EOF
 
-# Again, it would be wrong to pass $resolver_flag here.
-eval "C_INCLUDE_PATH="$(xcrun --show-sdk-path)"/usr/include/ffi" "stack" "$stack_yaml_flag" "build"
-eval "C_INCLUDE_PATH="$(xcrun --show-sdk-path)"/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "--test"
+# phase: hlint: stack build/test
+if ! [ "$no_builds" == --no-builds ]; then
+  # Again, it would be wrong to pass $resolver_flag here.
+  eval "C_INCLUDE_PATH="$(xcrun --show-sdk-path)"/usr/include/ffi" "stack" "$stack_yaml_flag" "build"
+  eval "C_INCLUDE_PATH="$(xcrun --show-sdk-path)"/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "--test"
+fi
 
 # --
 # - phase: test-ghc-9.0.sh

@@ -155,6 +155,7 @@ cat > cabal.project<<EOF
 packages:    */*.cabal
 constraints: hlint +ghc-lib, ghc-lib-parser-ex -auto -no-ghc-lib, ghc-lib $threaded_rts, ghc-lib-parser $threaded_rts
 $haddock
+allow-newer: all
 EOF
 
 cat cabal.project
@@ -180,10 +181,13 @@ fi
 
 # run tests
 cabal_project="$build_dir_for_this_ghc/cabal.project"
-project="--project-file $cabal_project"
-run="cabal new-run exe"
-(cd "ghc-lib-test-mini-hlint-$version_tag" && eval "$run:ghc-lib-test-mini-hlint" "$project" "--" "test/MiniHlintTest.hs")
-(cd "ghc-lib-test-mini-compile-$version_tag" && eval "$run:ghc-lib-test-mini-compile" "$project" "--" "test/MiniCompileTest.hs" "|" "tail" "-10")
-(cd "hlint-$version_tag" && eval "$run:hlint" "$project" "--" "--test")
+
+echo -n > "$build_dir_for_this_ghc"/ghc-lib-test-mini-hlint "cabal -v0 new-run exe:ghc-lib-test-mini-hlint --project-file $cabal_project --  "
+(cd "ghc-lib-test-mini-hlint-$version_tag" && eval 'cabal' 'new-test' '--test-show-details' 'direct' '--project-file' "$cabal_project" '--test-options="--test-command ../ghc-lib-test-mini-hlint"')
+
+echo -n > "$build_dir_for_this_ghc"/ghc-lib-test-mini-compile "cabal -v0 new-run exe:ghc-lib-test-mini-compile --project-file $cabal_project --  "
+(cd "ghc-lib-test-mini-compile-$version_tag" && eval 'cabal' 'new-test' '--test-show-details' 'direct' '--project-file' "$cabal_project" '--test-options="--test-command ../ghc-lib-test-mini-compile"')
+
+(cd "hlint-$version_tag" && eval "cabal new-run exe:hlint" "--project-file" "$cabal_project" "--" "--test")
 
 exit 0
