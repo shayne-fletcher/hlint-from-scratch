@@ -183,11 +183,11 @@ fi
 cabal_project="$build_dir_for_this_ghc/cabal.project"
 
 echo -n > "$build_dir_for_this_ghc"/ghc-lib-test-mini-hlint "cabal -v0 new-run exe:ghc-lib-test-mini-hlint --project-file $cabal_project --  "
-(cd "ghc-lib-test-mini-hlint-$version_tag" && eval 'cabal' 'new-test' '--test-show-details' 'direct' '--project-file' "$cabal_project" '--test-options="--test-command ../ghc-lib-test-mini-hlint"')
-
 echo -n > "$build_dir_for_this_ghc"/ghc-lib-test-mini-compile "cabal -v0 new-run exe:ghc-lib-test-mini-compile --project-file $cabal_project --  "
-(cd "ghc-lib-test-mini-compile-$version_tag" && eval 'cabal' 'new-test' '--test-show-details' 'direct' '--project-file' "$cabal_project" '--test-options="--test-command ../ghc-lib-test-mini-compile"')
 
+(cd "ghc-lib-test-mini-hlint-$version_tag" && eval 'cabal' 'new-test' '--test-show-details' 'direct' '--project-file' "$cabal_project" '--test-options="--test-command ../ghc-lib-test-mini-hlint"')
+(cd "ghc-lib-test-mini-compile-$version_tag" && eval 'cabal' 'new-test' '--test-show-details' 'direct' '--project-file' "$cabal_project" '--test-options="--test-command ../ghc-lib-test-mini-compile"')
+(cd "ghc-lib-parser-ex-$version_tag" && eval 'cabal' 'new-test' '--test-show-details' 'direct' '--project-file' "$cabal_project")
 (cd "hlint-$version_tag" && eval "cabal new-run exe:hlint" "--project-file" "$cabal_project" "--" "--test")
 
 exit 0

@@ -182,32 +182,7 @@ if [ -z "$GHC_FLAVOR" ]; then
       echo "\$HEAD is empty. Trying over." && hlint-from-scratch
   fi
   echo "HEAD: $HEAD"
-
-  # Get the latest on ghc-9.6 too.
-  GHC_961=$(cd ghc && git log origin/ghc-9.6 -n 1 | head -n 1 | awk '{ print $2 }')
-
   echo "master: $HEAD"
-  echo "ghc-9.6: $GHC_961"
-
-  current_ghc961=""
-  if [ -e "ghc-9.6.1-last-tested-at" ]; then
-    current_ghc961="$(cat ghc-9.6.1-last-tested-at)"
-    if [[ "$current_ghc961" == "$GHC_961" ]]; then
-      echo "The current ghc-9.6 \"tested at\" SHA ("$current_ghc961") hasn't changed"
-    else
-      echo "-- "
-      echo "There have been changes on the 9.6 branch"
-      # $GHC_961 is new. Summarize the new commits.
-      (cd ghc && PAGER=cat git show "$current_ghc961".."$GHC_961" --compact-summary)
-      echo "-- "
-      fi
-  else
-      current_ghc961="$GHC_961"
-  fi
-  # In any case, update the last tested at ghc-9.6 SHA.
-  cat > ghc-9.6.1-last-tested-at <<EOF
-$GHC_961
-EOF
 
   # If $HEAD agrees with the "last tested at" SHA in CI.hs stop here.
   current=$(grep "current = .*" CI.hs | grep -o "\".*\"" | cut -d "\"" -f 2)
@@ -230,6 +205,15 @@ if [[ -z "$GHC_FLAVOR" \
 else
   flavor=$([[ "$GHC_FLAVOR" =~ (ghc\-)([0-9])\.([0-9])\.([0-9]) ]] && echo "${BASH_REMATCH[2]}.${BASH_REMATCH[3]}.${BASH_REMATCH[4]}")
   version="$flavor"".""$(date -u +'%Y%m%d')"
+fi
+
+if false; then
+    rm -rf ~/.stack/programs/x86_64-osx/"$resolver"
+    :
+fi
+
+if true; then
+  rm -rf ~/.stack/snapshots/x86_64-osx/
 fi
 
 # ghc-lib
@@ -262,13 +246,13 @@ if [[ -z "$GHC_FLAVOR" \
     echo "Not on ghc-next. Trying 'git checkout ghc-next'"
     git checkout ghc-next
   fi
-# if the flavor indicates ghc's 9.6.1 branch get on
-# ghc-lib-parser-ex's 'ghc-9.6.1' branch ...
-elif [[ "$GHC_FLAVOR" == "ghc-9.6.1" ]]; then
-  if [[ "$branch" != "ghc-9.6.1" ]]; then
-    echo "Not on ghc-9.6.1. Trying 'git checkout ghc-9.6.1'"
-    git checkout ghc-9.6.1
-  fi
+# # if the flavor indicates ghc's 9.6.1 branch get on
+# # ghc-lib-parser-ex's 'ghc-9.6.1' branch ...
+# elif [[ "$GHC_FLAVOR" == "ghc-9.6.1" ]]; then
+#   if [[ "$branch" != "ghc-9.6.1" ]]; then
+#     echo "Not on ghc-9.6.1. Trying 'git checkout ghc-9.6.1'"
+#     git checkout ghc-9.6.1
+#   fi
 #... else it's a released flavor, get on branch ghc-lib-parser-ex's
 #'master' branch
 else
@@ -293,7 +277,10 @@ if [[ -n "$stack_yaml" ]]; then
   sed -e "s;^.*ghc-lib-parser.*$;;g" | \
   sed -e "s;^extra-deps:$;\
 # enable ghc-9.6.1 as a build compiler (base-4.18.0)\n\
-allow-newer: True\n\
+#   - 2022-03-19: This workaround should no longer be required.\n\
+# --\n\
+# allow-newer: True\n\
+# --\n\
 extra-deps:\n\
   # ghc-lib-parser\n\
   - archive: ${repo_dir}/ghc-lib/ghc-lib-parser-${version}.tar.gz\n\
@@ -357,13 +344,19 @@ else
 fi
 
 # We're stuck with only curated resolvers for hlint at this time.
-resolver=nightly-2023-01-01 # ghc-9.4.4
+resolver=nightly-2023-03-12 # ghc-9.4.4
+# Currently in sync with 'hlint/stack.yaml'.
 
 cat > stack-head.yaml <<EOF
 resolver: $resolver
 packages:
   - .
 extra-deps:
+
+  # Since allow-newer is in effect, cmdargs-0.10.21 overrides
+  # hlint.cabal
+  - cmdargs-0.10.22
+
   - archive: $repo_dir/ghc-lib/ghc-lib-parser-$version.tar.gz
     sha256: "$sha_ghc_lib_parser"
   - archive: $repo_dir/ghc-lib-parser-ex/ghc-lib-parser-ex-$version.tar.gz
@@ -385,9 +378,20 @@ EOF
 
 # phase: hlint: stack build/test
 if ! [ "$no_builds" == --no-builds ]; then
-  # Again, it would be wrong to pass $resolver_flag here.
-  eval "C_INCLUDE_PATH="$(xcrun --show-sdk-path)"/usr/include/ffi" "stack" "$stack_yaml_flag" "build"
-  eval "C_INCLUDE_PATH="$(xcrun --show-sdk-path)"/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "--test"
+  # Again, wrong to pass $resolver_flag here.
+
+  # Build hlint.
+  eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "build"
+
+  # Run its tests.
+  eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "--test"
+
+  # Test there are no changes to 'hints.md'.
+  eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "hlint" "--generate-summary"
+  git diff --exit-code hints.md
+
+  # # Run it on its own source.
+  # eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "src"
 fi
 
 # --
@@ -410,6 +414,8 @@ fi
 sed -i '' "s/^version:.*\$/version:            $version/g" hlint.cabal
 sed -i '' "s/^.*ghc-lib-parser ==.*\$/          ghc-lib-parser == $version/g" hlint.cabal
 sed -i '' "s/^.*ghc-lib-parser-ex >=.*\$/          ghc-lib-parser-ex == $version/g" hlint.cabal
+# sarif tests encode the current hlint version number
+sed -i '' "s/3.5/$version/g" tests/sarif.test # hack. see issue https://github.com/ndmitchell/hlint/issues/1492
 eval "stack" "$stack_yaml_flag" "sdist" "." "--tar-dir" "."
 
 # - Generate a cabal.project of
