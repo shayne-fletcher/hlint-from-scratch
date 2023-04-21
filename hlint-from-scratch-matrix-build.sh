@@ -36,7 +36,8 @@ pushd "ghc-lib"
 
 # these are hlint buildable
 head=""
-flavors=("$head" "ghc-master" "ghc-9.6.1")
+#flavors=("$head" "ghc-master")
+flavors=("ghc-master")
 resolvers=("ghc-9.6.1" "ghc-9.4.4")
 for f in "${flavors[@]}"; do
     for r in "${resolvers[@]}"; do
@@ -48,25 +49,13 @@ for f in "${flavors[@]}"; do
 done
 
 # these are hlint buildable
-flavors=("ghc-9.6.1" "ghc-9.4.4") # these are not: "ghc-9.2.x"
+flavors=("ghc-9.6.1" ) # these are not: "ghc-9.4.x" "ghc-9.2.x"
 resolvers=("ghc-9.4.4" "ghc-9.2.7")
 for f in "${flavors[@]}"; do
     for r in "${resolvers[@]}"; do
         echo "-- "
         echo "hlint-from-scratch start flavor: $f resolver: $r"
         hlint-from-scratch --ghc-flavor="$f" --cabal-with-ghc="$r" --no-checkout --no-builds --no-haddock --stack-yaml=stack-exact.yaml --resolver="$r"
-        git checkout CI.hs # restore "Last tested gitlab.haskell.org/ghc/ghc.git " sha
-    done
-done
-
-# this is hlint buildable
-flavors=("ghc-9.4.4") # these are not: "ghc-9.2.7" "ghc-9.0.2"
-resolvers=("ghc-9.0.2")
-for f in "${flavors[@]}"; do
-    for r in "${resolvers[@]}"; do
-        echo "-- "
-        echo "hlint-from-scratch start flavor: $f resolver: $r"
-        hlint-from-scratch --ghc-flavor="$f" --cabal-with-ghc="$r" --no-checkout --no-haddock --stack-yaml=stack-exact.yaml --resolver="$r"
         git checkout CI.hs # restore "Last tested gitlab.haskell.org/ghc/ghc.git " sha
     done
 done
