@@ -155,7 +155,7 @@ cat > cabal.project<<EOF
 packages:    */*.cabal
 constraints: hlint +ghc-lib, ghc-lib-parser-ex -auto -no-ghc-lib, ghc-lib $threaded_rts, ghc-lib-parser $threaded_rts
 $haddock
-allow-newer: all
+-- allow-newer: all
 EOF
 
 cat cabal.project
