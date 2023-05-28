@@ -207,11 +207,12 @@ else
   version="$flavor"".""$(date -u +'%Y%m%d')"
 fi
 
+# Set these both to false for quick iteration. Set false/true for
+# matrix builds.
 if false; then
     rm -rf ~/.stack/programs/x86_64-osx/"$resolver"
     :
 fi
-
 if true; then
   rm -rf ~/.stack/snapshots/x86_64-osx/
 fi
