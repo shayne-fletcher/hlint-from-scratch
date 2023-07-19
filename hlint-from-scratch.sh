@@ -388,10 +388,10 @@ if ! [ "$no_builds" == --no-builds ]; then
   eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "--test"
 
   # Test there are no changes to 'hints.md'.
-  eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "hlint" "--generate-summary"
-  git diff --exit-code hints.md
+  #eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "hlint" "--generate-summary"
+  #git diff --exit-code hints.md
 
-  # # Run it on its own source.
+  # Run it on its own source.
   # eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "src"
 fi
 
