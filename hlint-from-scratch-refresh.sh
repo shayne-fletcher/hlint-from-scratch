@@ -35,7 +35,7 @@ else
 fi
 
 ds=("ghc-lib-parser-ex" "hlint")
-branches=("ghc-9.6.1" "ghc-next")
+branches=("ghc-9.8.1" "ghc-next")
 for d in "${ds[@]}"; do
     if [ ! -d "$d" ]; then
         echo "missing dir $d"
