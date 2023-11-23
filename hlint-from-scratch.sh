@@ -36,6 +36,9 @@ args="
   --resolver=ARG
     Stack resolver.
 
+  --matrix-build
+    Invoke matrix build behaviors.
+
   --no-checkout
     Reuse an existing GHC clone in ghc-lib-parser.
 
@@ -69,6 +72,7 @@ with_haddock_flag="--with-hadock"
 no_threaded_rts=false
 no_threaded_rts_flag=""
 no_checkout_flag=""
+matrix_build=false
 
 while [ $# -gt 0 ]; do
     if [ "$1" = "--help" ]; then
@@ -93,6 +97,9 @@ while [ $# -gt 0 ]; do
         cabal_with_ghc="${BASH_REMATCH[1]}"
     elif [ "$1" = "--no-checkout" ]; then
         no_checkout_flag="--no-checkout"
+        echo "cloning ghc skipped."
+    elif [ "$1" = "--matrix-build" ]; then
+        matrix_build=true
         echo "cloning ghc skipped."
     elif [ "$1" = "--no-builds" ]; then
         no_builds="--no-builds"
@@ -213,8 +220,10 @@ if false; then
     rm -rf ~/.stack/programs/x86_64-osx/"$resolver"
     :
 fi
-if true; then
+if $matrix_build; then
+  set +e
   rm -rf ~/.stack/snapshots/x86_64-osx/
+  set -e
 fi
 
 # ghc-lib
@@ -247,12 +256,12 @@ if [[ -z "$GHC_FLAVOR" \
     echo "Not on ghc-next. Trying 'git checkout ghc-next'"
     git checkout ghc-next
   fi
-# # if the flavor indicates ghc's 9.6.1 branch get on
-# # ghc-lib-parser-ex's 'ghc-9.6.1' branch ...
-# elif [[ "$GHC_FLAVOR" == "ghc-9.6.1" ]]; then
-#   if [[ "$branch" != "ghc-9.6.1" ]]; then
-#     echo "Not on ghc-9.6.1. Trying 'git checkout ghc-9.6.1'"
-#     git checkout ghc-9.6.1
+# if the flavor indicates ghc's 9.8.1 branch get on
+# ghc-lib-parser-ex's 'ghc-next' branch (yes, ghc-next) ...
+# elif [[ "$GHC_FLAVOR" == "ghc-9.8.1" ]]; then
+#   if [[ "$branch" != "ghc-next" ]]; then
+#     echo "Not on ghc-next. Trying 'git checkout ghc-next'"
+#     git checkout ghc-next
 #   fi
 #... else it's a released flavor, get on branch ghc-lib-parser-ex's
 #'master' branch
@@ -266,10 +275,20 @@ fi
 # If a resolver hasn't been set, set it now to this.
 [[ -z "$resolver" ]] && resolver=nightly-2022-08-04 # ghc-9.2.4
 
+# Record the ghc-version (e.g. 9.8.1).
+build_comp_version="$(stack $stack_yaml_flag $resolver_flag --silent exec -- ghc --version | sed 's/The Glorious Glasgow Haskell Compilation System, version //g')"
+
 # This an elaborate step to create a config file'stack-head.yaml'.
 #
 # If a stack-yaml argument was provided, seed its contents from it
 # otherwise, assume a curated $resolver and create it from scratch.
+
+# Enable 'allow-newer' if using ghc-9.8.1.
+allow_newer=""
+if [[ "$build_comp_version" == 9.8.* ]]; then
+  allow_newer="allow-newer: True"
+fi
+
 if [[ -n "$stack_yaml" ]]; then
   echo "Seeding stack-head.yaml from $stack_yaml"
   # shellcheck disable=SC2002
@@ -277,10 +296,9 @@ if [[ -n "$stack_yaml" ]]; then
   # Delete any pre-existing ghc-lib-parser extra dependency.
   sed -e "s;^.*ghc-lib-parser.*$;;g" | \
   sed -e "s;^extra-deps:$;\
-# enable ghc-9.6.1 as a build compiler (base-4.18.0)\n\
-#   - 2022-03-19: This workaround should no longer be required.\n\
+# enable ghc-9.8.1 as a build compiler (base-4.19.0)\n\
 # --\n\
-# allow-newer: True\n\
+$allow_newer\n\
 # --\n\
 extra-deps:\n\
   # ghc-lib-parser\n\
@@ -328,13 +346,13 @@ if [[ -z "$GHC_FLAVOR" \
     echo "Not on ghc-next. Trying 'git checkout ghc-next'"
     git checkout ghc-next
   fi
-# # if the flavor indicates ghc's 9.6.1 branch get on
-# # ghc-lib-parser-ex's 'ghc-9.6.1' branch ...
-# elif [[ "$GHC_FLAVOR" == "ghc-9.6.1" ]]; then
-#   if [[ "$branch" != "ghc-9.6.1" ]]; then
-#     echo "Not on ghc-9.6.1. Trying 'git checkout ghc-9.6.1'"
-#     git checkout ghc-9.6.1
-#   fi
+# if the flavor indicates ghc's 9.8.1 branch get on
+# hlint's 'ghc-9.8.1' branch ...
+elif [[ "$GHC_FLAVOR" == "ghc-9.8.1" ]]; then
+  if [[ "$branch" != "ghc-9.8.1" ]]; then
+    echo "Not on ghc-9.8.1. Trying 'git checkout ghc-9.8.1'"
+    git checkout ghc-9.8.1
+  fi
 #... else it's a released flavor, get on branch hlint's 'master'
 #branch
 else
@@ -345,7 +363,7 @@ else
 fi
 
 # We're stuck with only curated resolvers for hlint at this time.
-resolver=nightly-2023-03-12 # ghc-9.4.4
+resolver=lts-21.6 # ghc-9.4.5
 # Currently in sync with 'hlint/stack.yaml'.
 
 cat > stack-head.yaml <<EOF
@@ -353,11 +371,6 @@ resolver: $resolver
 packages:
   - .
 extra-deps:
-
-  # Since allow-newer is in effect, cmdargs-0.10.21 overrides
-  # hlint.cabal
-  - cmdargs-0.10.22
-
   - archive: $repo_dir/ghc-lib/ghc-lib-parser-$version.tar.gz
     sha256: "$sha_ghc_lib_parser"
   - archive: $repo_dir/ghc-lib-parser-ex/ghc-lib-parser-ex-$version.tar.gz
@@ -378,7 +391,8 @@ allow-newer: true
 EOF
 
 # phase: hlint: stack build/test
-if ! [ "$no_builds" == --no-builds ]; then
+if true; then
+# if ! [ "$no_builds" == --no-builds ]; then
   # Again, wrong to pass $resolver_flag here.
 
   # Build hlint.
@@ -388,11 +402,11 @@ if ! [ "$no_builds" == --no-builds ]; then
   eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "--test"
 
   # Test there are no changes to 'hints.md'.
-  #eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "hlint" "--generate-summary"
-  #git diff --exit-code hints.md
+  eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "hlint" "--generate-summary"
+  git diff --exit-code hints.md
 
   # Run it on its own source.
-  # eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "src"
+  eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "src"
 fi
 
 # --

@@ -41,28 +41,28 @@ pushd "ghc-lib"
 # these are hlint buildable
 head=""
 if [ "$skip_head" ]; then
-    flavors=("ghc-master")
+    flavors=("ghc-master" "ghc-9.8.1")
 else
-    flavors=("$head" "ghc-master")
+    flavors=("$head" "ghc-master" "ghc-9.8.1")
 fi
-resolvers=("ghc-9.6.1" "ghc-9.4.5") # waiting for ghc-9.6.2
+resolvers=("ghc-9.8.1" "ghc-9.6.3" "ghc-9.4.8")
 for f in "${flavors[@]}"; do
     for r in "${resolvers[@]}"; do
         echo "-- "
         echo "hlint-from-scratch start flavor: $f resolver: $r"
-        hlint-from-scratch --ghc-flavor="$f" --cabal-with-ghc="$r" --no-checkout --no-haddock --stack-yaml=stack-exact.yaml --resolver="$r"
+        hlint-from-scratch --matrix-build --ghc-flavor="$f" --cabal-with-ghc="$r" --no-checkout --no-haddock --stack-yaml=stack-exact.yaml --resolver="$r"
         git checkout CI.hs # restore "Last tested gitlab.haskell.org/ghc/ghc.git " sha
     done
 done
 
 # these are hlint buildable
-flavors=("ghc-9.6.2") # these are not: "ghc-9.4.x" "ghc-9.2.x"
-resolvers=("ghc-9.4.5" "ghc-9.2.7")
+flavors=("ghc-9.6.3") # these are not: "ghc-9.4.x" "ghc-9.2.x"
+resolvers=("ghc-9.4.8" "ghc-9.2.8")
 for f in "${flavors[@]}"; do
     for r in "${resolvers[@]}"; do
         echo "-- "
         echo "hlint-from-scratch start flavor: $f resolver: $r"
-        hlint-from-scratch --ghc-flavor="$f" --cabal-with-ghc="$r" --no-checkout --no-builds --no-haddock --stack-yaml=stack-exact.yaml --resolver="$r"
+        hlint-from-scratch --matrix-build --ghc-flavor="$f" --cabal-with-ghc="$r" --no-checkout --no-builds --no-haddock --stack-yaml=stack-exact.yaml --resolver="$r"
         git checkout CI.hs # restore "Last tested gitlab.haskell.org/ghc/ghc.git " sha
     done
 done
@@ -70,8 +70,8 @@ done
 # don't run this script again until there's a new commit upstream
 git checkout .
 echo "-- "
-echo "hlint-from-scratch start flavor:  resolver: ghc-9.4.5"
-PATH=/Users/shayne/project/hlint-from-scratch:"$PATH" hlint-from-scratch --ghc-flavor="" --stack-yaml=stack-exact.yaml --resolver=ghc-9.4.5 --no-checkout --no-builds --no-cabal
+echo "hlint-from-scratch start flavor:  resolver: ghc-9.4.8"
+PATH=/Users/shayne/project/hlint-from-scratch:"$PATH" hlint-from-scratch --matrix-build --ghc-flavor="" --stack-yaml=stack-exact.yaml --resolver=ghc-9.4.8 --no-checkout --no-builds --no-cabal
 git checkout examples ghc-lib-gen.cabal
 
 popd
