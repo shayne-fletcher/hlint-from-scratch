@@ -59,7 +59,7 @@ for f in "${flavors[@]}"; do
     done
 done
 
-flavors=("ghc-9.6.3")
+flavors=("ghc-9.6.4")
 resolvers=("nightly-2023-07-22" "lts-21.0" "lts-20.20") # ghc-9.6.2 ghc-9.4.5, ghc-9.2.7
 for f in "${flavors[@]}"; do
     for r in "${resolvers[@]}"; do
@@ -69,7 +69,7 @@ for f in "${flavors[@]}"; do
 done
 
 flavors=("ghc-9.8.1")
-resolvers=("nightly-2023-07-22" "lts-21.0" ) # ghc-9.6.2 ghc-9.4.5
+resolvers=( "lts-22.4" "lts-21.0" ) # ghc-9.6.3 ghc-9.4.5
 
 # neither of these resolvers have semaphore-compat so stack-yaml needs an extra-deps
 # extra-deps:

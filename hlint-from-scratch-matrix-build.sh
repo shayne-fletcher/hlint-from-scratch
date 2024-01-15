@@ -38,14 +38,17 @@ fi
 
 pushd "ghc-lib"
 
+# hlint
+#  ghc-master, ghc-9.8.1
+
 # these are hlint buildable
 head=""
 if [ "$skip_head" ]; then
-    flavors=("ghc-master" "ghc-9.8.1")
+    flavors=("ghc-master")
 else
-    flavors=("$head" "ghc-master" "ghc-9.8.1")
+    flavors=("$head" "ghc-master")
 fi
-resolvers=("ghc-9.8.1" "ghc-9.6.3" "ghc-9.4.8")
+resolvers=("ghc-9.8.1" "ghc-9.6.4")
 for f in "${flavors[@]}"; do
     for r in "${resolvers[@]}"; do
         echo "-- "
@@ -56,8 +59,8 @@ for f in "${flavors[@]}"; do
 done
 
 # these are hlint buildable
-flavors=("ghc-9.6.3") # these are not: "ghc-9.4.x" "ghc-9.2.x"
-resolvers=("ghc-9.4.8" "ghc-9.2.8")
+flavors=("ghc-9.8.1") # these are not: "ghc-9.4.x" "ghc-9.2.x"
+resolvers=("ghc-9.8.1" "ghc-9.6.4" "ghc-9.4.8")
 for f in "${flavors[@]}"; do
     for r in "${resolvers[@]}"; do
         echo "-- "

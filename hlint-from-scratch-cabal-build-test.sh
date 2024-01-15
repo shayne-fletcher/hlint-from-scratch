@@ -151,21 +151,20 @@ fi
 
 allow_newer=""
 extra_constraints=""
+# Use like this if you have to:
 if [ "$ghc_version" == "ghc-9.8.1" ]; then
-  allow_newer="all:base, all:ghc-prim, all:template-haskell, all:deepseq, all:hpc"
-  # Use like this if you have to.
-  #   extra_constraints="th-abstraction==0.6.0.0, text==2.0.1, "
+    :
+#   allow_newer="allow-newer: ghc-lib:hpc"
+#   extra_constraints="th-abstraction==0.6.0.0, text==2.0.1, "
 fi
-
 # Requires cabal-instal >= 3.8.1.0
 # (reference https://cabal.readthedocs.io/en/3.8/index.html)
+constraints="constraints: $extra_constraints hlint +ghc-lib, ghc-lib-parser-ex -auto -no-ghc-lib, ghc-lib $threaded_rts, ghc-lib-parser $threaded_rts"
+
 cat > cabal.project<<EOF
-packages:    */*.cabal
-
-allow-newer: $allow_newer
-
-constraints: $extra_constraints hlint +ghc-lib, ghc-lib-parser-ex -auto -no-ghc-lib, ghc-lib $threaded_rts, ghc-lib-parser $threaded_rts
-
+packages: */*.cabal
+$allow_newer
+$constraints
 $haddock
 EOF
 

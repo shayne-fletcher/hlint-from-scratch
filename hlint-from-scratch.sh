@@ -346,15 +346,6 @@ if [[ -z "$GHC_FLAVOR" \
     echo "Not on ghc-next. Trying 'git checkout ghc-next'"
     git checkout ghc-next
   fi
-# if the flavor indicates ghc's 9.8.1 branch get on
-# hlint's 'ghc-9.8.1' branch ...
-elif [[ "$GHC_FLAVOR" == "ghc-9.8.1" ]]; then
-  if [[ "$branch" != "ghc-9.8.1" ]]; then
-    echo "Not on ghc-9.8.1. Trying 'git checkout ghc-9.8.1'"
-    git checkout ghc-9.8.1
-  fi
-#... else it's a released flavor, get on branch hlint's 'master'
-#branch
 else
   if [[ "$branch" != "master" ]]; then
       echo "Not on master. Trying 'git checkout master'"
@@ -363,7 +354,17 @@ else
 fi
 
 # We're stuck with only curated resolvers for hlint at this time.
-resolver=lts-21.6 # ghc-9.4.5
+if [[ -z "$GHC_FLAVOR" \
+   || "$GHC_FLAVOR" == "ghc-master"
+ ]]; then
+  # ghc-flavor >= ghc-master
+  resolver=nightly-2023-11-24 # ghc-9.6.3
+else
+  # ghc-flavor can be ghc-9.6.* (current) or ghc-9.8.1 (pending). in
+  # either case, 9.4.* is a valid choice.
+  resolver=lts-21.6 # ghc-9.4.5
+fi
+
 # Currently in sync with 'hlint/stack.yaml'.
 
 cat > stack-head.yaml <<EOF
@@ -391,8 +392,8 @@ allow-newer: true
 EOF
 
 # phase: hlint: stack build/test
-if true; then
-# if ! [ "$no_builds" == --no-builds ]; then
+#if true; then
+if ! [ "$no_builds" == --no-builds ]; then
   # Again, wrong to pass $resolver_flag here.
 
   # Build hlint.
