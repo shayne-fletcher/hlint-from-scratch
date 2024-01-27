@@ -1,4 +1,4 @@
-# `hlint-from-scratch`
+# `hlint-from-scratch` [![hlint-from-scratch](https://github.com/shayne-fletcher/hlint-from-scratch/actions/workflows/hlint-from-scratch.yml/badge.svg)](https://github.com/shayne-fletcher/hlint-from-scratch/actions/workflows/hlint-from-scratch.yml)
 
 Scripts for building HLint from GHC `HEAD` (and other flavors).
 
