@@ -81,7 +81,7 @@ while [ $# -gt 0 ]; do
         GHC_FLAVOR="${BASH_REMATCH[1]}"
     elif [[ "$1" =~ --init=([^[:space:]]+) ]]; then
         init_arg="${BASH_REMATCH[1]}"
-        hlint-from-scratch-init --repo-dir="$init_arg"
+        ./hlint-from-scratch-init.sh --repo-dir="$init_arg"
         echo "repo-dir \"$repo_dir\" initialized"
         echo "next: hlint-from-scratch --ghc-flavor=... ... --repo-dir=$repo_dir"
         exit 0
@@ -236,11 +236,14 @@ else
 fi
 sha_ghc_lib_parser=$(shasum -a 256 "$repo_dir"/ghc-lib/ghc-lib-parser-"$version".tar.gz | awk '{ print $1 }')
 
-if [ -z "$GHC_FLAVOR" ]; then
-    # If the above worked out, update CI.hs.
-    sed -i '' "s/current = \".*\" -- .*/current = \"$HEAD\" -- $today/g" CI.hs
-    # Report.
-    grep "current = .*" CI.hs
+# temp disable while i focus on minimal set of github actions
+if false; then
+  if [ -z "$GHC_FLAVOR" ]; then
+      # If the above worked out, update CI.hs.
+      sed -i '' "s/current = \".*\" -- .*/current = \"$HEAD\" -- $today/g" "$repo_dir"/ghc-lib/CI.hs
+      # Report.
+      grep "current = .*" "$repo_dir"/ghc-lib/CI.hs
+  fi
 fi
 
 # ghc-lib-parser-ex

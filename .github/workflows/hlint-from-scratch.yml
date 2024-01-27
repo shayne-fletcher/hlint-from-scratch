@@ -1,0 +1,26 @@
+name: hlint-from-scratch
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  hlint-from-scratch-ubuntu:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu, macos, windows]
+    steps:
+      - uses: actions/checkout@v4
+      - run: stack upgrade
+      - run: brew install automake
+        if: matrix.os == 'macos'
+      - run: |-
+          echo "GHCLIB_AZURE='1'" >> $GITHUB_ENV
+          echo "repo_dir=$(mktemp -d)" >> $GITHUB_ENV
+        shell: bash
+      - run: ./hlint-from-scratch.sh --init="$repo_dir"
+        shell: bash
+      - run: ./hlint-from-scratch.sh --repo-dir="$repo_dir" --ghc-flavor="" --no-cabal --stack-yaml=stack-exact.yaml --resolver=ghc-9.6.4 --no-checkout
+        shell: bash
