@@ -4,7 +4,7 @@ on:
   pull_request:
   workflow_dispatch:
   schedule:
-    - cron:  '0 0 * * *' # end of every day
+    - cron: '0 0 * * 1-5' # 00:00 mon-fri
 jobs:
   hlint-from-scratch-ubuntu:
     name: ${{ matrix.os }}
@@ -17,15 +17,14 @@ jobs:
       - uses: actions/checkout@v4
       - run: brew install automake
         if: matrix.os == 'macos'
+      - run: echo "GHCLIB_AZURE='1'" >> $GITHUB_ENV
+        shell: bash
+      - run: ./hlint-from-scratch.sh --init="$HOME/project"
+        shell: bash
       - run: cabal update
-      # - run: cabal new-install cabal-install --overwrite-policy=always
-      - run: cabal new-install apply-refact
-        if: matrix.os == 'ubuntu'
-      - run: |-
-          echo "GHCLIB_AZURE='1'" >> $GITHUB_ENV
-          echo "repo_dir=$HOME/project" >> $GITHUB_ENV
+      - run: ./hlint-from-scratch.sh --ghc-flavor="" --stack-yaml=stack-exact.yaml --resolver=ghc-9.6.4 --no-checkout
         shell: bash
-      - run: echo "$repo_dir"&&./hlint-from-scratch.sh --init="$repo_dir"
+        if: matrix.os =='ubuntu' || matrix.os == 'macos'
+      - run: ./hlint-from-scratch.sh --ghc-flavor="" --stack-yaml=stack-exact.yaml --resolver=ghc-9.6.4 --no-checkout --no-builds
         shell: bash
-      - run: echo "$repo_dir"&&./hlint-from-scratch.sh --repo-dir="$repo_dir" --ghc-flavor="" --no-cabal --stack-yaml=stack-exact.yaml --resolver=ghc-9.6.4 --no-checkout --no-cabal
-        shell: bash
+        if: matrix.os == 'windows'

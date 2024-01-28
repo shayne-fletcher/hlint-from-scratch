@@ -59,10 +59,12 @@ args="
 "
 usage="usage: $prog $args"
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 GHC_FLAVOR=""
 no_builds=""
 no_cabal=""
-cabal_with_ghc="ghc-9.4.4"
+cabal_with_ghc="$(ghc --version | sed -e 's/The Glorious Glasgow Haskell Compilation System, version //g' -e 's/^/ghc-/g')"
 stack_yaml=""
 stack_yaml_flag=""
 resolver=""
@@ -81,7 +83,7 @@ while [ $# -gt 0 ]; do
         GHC_FLAVOR="${BASH_REMATCH[1]}"
     elif [[ "$1" =~ --init=([^[:space:]]+) ]]; then
         repo_dir="${BASH_REMATCH[1]}"
-        ./hlint-from-scratch-init.sh --repo-dir="$repo_dir"
+        "$SCRIPT_DIR"/hlint-from-scratch-init.sh --repo-dir="$repo_dir"
         echo "repo-dir \"$repo_dir\" initialized"
         echo "next: hlint-from-scratch --ghc-flavor=... ... --repo-dir=$repo_dir"
         exit 0
@@ -240,7 +242,11 @@ fi
 if false; then
   if [ -z "$GHC_FLAVOR" ]; then
       # If the above worked out, update CI.hs.
-      sed -i '' "s/current = \".*\" -- .*/current = \"$HEAD\" -- $today/g" "$repo_dir"/ghc-lib/CI.hs
+      if [ $(uname == "Darwin") ]; then
+          sed -i '' "s/current = \".*\" -- .*/current = \"$HEAD\" -- $today/g" "$repo_dir"/ghc-lib/CI.hs
+      else
+          sed -i'' "s/current = \".*\" -- .*/current = \"$HEAD\" -- $today/g" "$repo_dir"/ghc-lib/CI.hs
+      fi
       # Report.
       grep "current = .*" "$repo_dir"/ghc-lib/CI.hs
   fi
@@ -248,7 +254,7 @@ fi
 
 # ghc-lib-parser-ex
 
-cd ../ghc-lib-parser-ex && git checkout .
+cd "$repo_dir"/ghc-lib-parser-ex && git checkout .
 branch=$(git rev-parse --abbrev-ref HEAD)
 
 # if the flavor indicates ghc's master branch get on
@@ -292,10 +298,10 @@ if [[ "$build_comp_version" == 9.8.* ]]; then
   allow_newer="allow-newer: True"
 fi
 
+repo_dir_stripped=$(echo "${repo_dir}" | sed -e "s;^/./;/;g") # peel off leading /c if neccessary for this
+
 if [[ -n "$stack_yaml" ]]; then
   echo "Seeding stack-head.yaml from $stack_yaml"
-  repo_dir=$(echo "${repo_dir}" | sed -e "s;^/./;/;g") # peel off leading /c if neccessary
-  echo "repo_dir: ${repo_dir}"
   # shellcheck disable=SC2002
   cat "$stack_yaml" | \
   # Delete any pre-existing ghc-lib-parser extra dependency.
@@ -307,14 +313,14 @@ $allow_newer\n\
 # --\n\
 extra-deps:\n\
   # ghc-lib-parser\n\
-  - archive: ${repo_dir}/ghc-lib/ghc-lib-parser-${version}.tar.gz;\
+  - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-${version}.tar.gz;\
 g" | \
   sed -e "s;^resolver:.*$;resolver: ${resolver};g" > stack-head.yaml
 else
   cat > stack-head.yaml <<EOF
 resolver: $resolver
 extra-deps:
-  - archive: ${repo_dir}/ghc-lib/ghc-lib-parser-$version.tar.gz
+  - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-$version.tar.gz
 ghc-options:
     "$DOLLAR$everything": -j
     "$DOLLAR$locals": -ddump-to-file -ddump-hi -Wall -Wno-name-shadowing -Wunused-imports
@@ -341,7 +347,7 @@ set -e
 
 # Hlint
 
-cd ../hlint && git checkout .
+cd "$repo_dir"/hlint && git checkout .
 branch=$(git rev-parse --abbrev-ref HEAD)
 # if the flavor indicates ghc's master branch get on hlint's
 # 'ghc-next' branch ...
@@ -378,8 +384,8 @@ resolver: $resolver
 packages:
   - .
 extra-deps:
-  - archive: $repo_dir/ghc-lib/ghc-lib-parser-$version.tar.gz
-  - archive: $repo_dir/ghc-lib-parser-ex/ghc-lib-parser-ex-$version.tar.gz
+  - archive: $repo_dir_stripped/ghc-lib/ghc-lib-parser-$version.tar.gz
+  - archive: $repo_dir_stripped/ghc-lib-parser-ex/ghc-lib-parser-ex-$version.tar.gz
 ghc-options:
     "$DOLLAR$everything": -j
     "$DOLLAR$locals": -ddump-to-file -ddump-hi -Werror=unused-imports -Werror=unused-local-binds -Werror=unused-top-binds -Werror=orphans
@@ -448,11 +454,21 @@ fi
 # context. Well, never mind; take the approach of constraining the
 # bounds exactly. It's kind of more explicitly saying what we mean
 # anyway.
-sed -i '' "s/^version:.*\$/version:            $version/g" hlint.cabal
-sed -i '' "s/^.*ghc-lib-parser ==.*\$/          ghc-lib-parser == $version/g" hlint.cabal
-sed -i '' "s/^.*ghc-lib-parser-ex >=.*\$/          ghc-lib-parser-ex == $version/g" hlint.cabal
-# sarif tests encode the current hlint version number
-sed -i '' "s/3.5/$version/g" tests/sarif.test # hack. see issue https://github.com/ndmitchell/hlint/issues/1492
+echo "phase test-ghc-9.0.sh in $(pwd)"
+
+if [ $(uname) == "Darwin" ]; then
+  sed -i '' "s/^version:.*\$/version:            $version/g" hlint.cabal
+  sed -i '' "s/^.*ghc-lib-parser ==.*\$/          ghc-lib-parser == $version/g" hlint.cabal
+  sed -i '' "s/^.*ghc-lib-parser-ex >=.*\$/          ghc-lib-parser-ex == $version/g" hlint.cabal
+  # sarif tests encode the current hlint version number
+  sed -i '' "s/3.5/$version/g" tests/sarif.test # hack. see issue https://github.com/ndmitchell/hlint/issues/1492
+else
+  sed -i'' "s/^version:.*\$/version:            $version/g" hlint.cabal
+  sed -i'' "s/^.*ghc-lib-parser ==.*\$/          ghc-lib-parser == $version/g" hlint.cabal
+  sed -i'' "s/^.*ghc-lib-parser-ex >=.*\$/          ghc-lib-parser-ex == $version/g" hlint.cabal
+  # sarif tests encode the current hlint version number
+  sed -i'' "s/3.5/$version/g" tests/sarif.test # hack. see issue https://github.com/ndmitchell/hlint/issues/1492
+fi
 eval "stack" "$stack_yaml_flag" "sdist" "." "--tar-dir" "."
 
 # - Generate a cabal.project of
@@ -463,8 +479,9 @@ eval "stack" "$stack_yaml_flag" "sdist" "." "--tar-dir" "."
 #   - Depending on the contents of `$with_haddock_flag`. Also,
 # - Run ghc-lib-test-mini-hlint, ghc-lib-test-mini-compile and the
 #   hlint test suite.
-tmp_dir=$(mktemp -d)
-(cd "$tmp_dir" && hlint-from-scratch-cabal-build-test.sh  \
+tmp_dir=$HOME/tmp
+mkdir -p "$tmp_dir"
+(cd "$tmp_dir" && "$SCRIPT_DIR"/hlint-from-scratch-cabal-build-test.sh  \
      "$cabal_with_ghc_flag"                                \
      --version-tag="$version"                              \
      --ghc-lib-dir="$repo_dir/ghc-lib"                     \
