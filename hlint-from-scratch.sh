@@ -80,8 +80,8 @@ while [ $# -gt 0 ]; do
     elif [[ "$1" =~ --ghc-flavor=([^[:space:]]*) ]]; then
         GHC_FLAVOR="${BASH_REMATCH[1]}"
     elif [[ "$1" =~ --init=([^[:space:]]+) ]]; then
-        init_arg="${BASH_REMATCH[1]}"
-        hlint-from-scratch-init --repo-dir="$init_arg"
+        repo_dir="${BASH_REMATCH[1]}"
+        ./hlint-from-scratch-init.sh --repo-dir="$repo_dir"
         echo "repo-dir \"$repo_dir\" initialized"
         echo "next: hlint-from-scratch --ghc-flavor=... ... --repo-dir=$repo_dir"
         exit 0
@@ -234,13 +234,16 @@ if [ -z "$GHC_FLAVOR" ]; then
 else
     eval "$cmd" "$GHC_FLAVOR"
 fi
-sha_ghc_lib_parser=$(shasum -a 256 "$repo_dir"/ghc-lib/ghc-lib-parser-"$version".tar.gz | awk '{ print $1 }')
+#sha_ghc_lib_parser=$(shasum -a 256 "$repo_dir"/ghc-lib/ghc-lib-parser-"$version".tar.gz | awk '{ print $1 }')
 
-if [ -z "$GHC_FLAVOR" ]; then
-    # If the above worked out, update CI.hs.
-    sed -i '' "s/current = \".*\" -- .*/current = \"$HEAD\" -- $today/g" CI.hs
-    # Report.
-    grep "current = .*" CI.hs
+# temp disabled while i focus on minimal set of github actions
+if false; then
+  if [ -z "$GHC_FLAVOR" ]; then
+      # If the above worked out, update CI.hs.
+      sed -i '' "s/current = \".*\" -- .*/current = \"$HEAD\" -- $today/g" "$repo_dir"/ghc-lib/CI.hs
+      # Report.
+      grep "current = .*" "$repo_dir"/ghc-lib/CI.hs
+  fi
 fi
 
 # ghc-lib-parser-ex
@@ -291,6 +294,8 @@ fi
 
 if [[ -n "$stack_yaml" ]]; then
   echo "Seeding stack-head.yaml from $stack_yaml"
+  repo_dir=$(echo "${repo_dir}" | sed -e "s;^/./;/;g") # peel off leading /c if neccessary
+  echo "repo_dir: ${repo_dir}"
   # shellcheck disable=SC2002
   cat "$stack_yaml" | \
   # Delete any pre-existing ghc-lib-parser extra dependency.
@@ -302,8 +307,7 @@ $allow_newer\n\
 # --\n\
 extra-deps:\n\
   # ghc-lib-parser\n\
-  - archive: ${repo_dir}/ghc-lib/ghc-lib-parser-${version}.tar.gz\n\
-    sha256: \"${sha_ghc_lib_parser}\";\
+  - archive: ${repo_dir}/ghc-lib/ghc-lib-parser-${version}.tar.gz;\
 g" | \
   sed -e "s;^resolver:.*$;resolver: ${resolver};g" > stack-head.yaml
 else
@@ -311,7 +315,6 @@ else
 resolver: $resolver
 extra-deps:
   - archive: ${repo_dir}/ghc-lib/ghc-lib-parser-$version.tar.gz
-    sha256: "$sha_ghc_lib_parser"
 ghc-options:
     "$DOLLAR$everything": -j
     "$DOLLAR$locals": -ddump-to-file -ddump-hi -Wall -Wno-name-shadowing -Wunused-imports
@@ -330,8 +333,11 @@ stack_yaml=stack-head.yaml
 stack_yaml_flag="--stack-yaml $stack_yaml"
 # No need to pass $resolver_flag here, we fixed the resolver in
 # 'stack-head.yaml'.
+set +e
+cat "$stack_yaml"
 eval "$runhaskell $stack_yaml_flag CI.hs -- $no_builds $stack_yaml_flag --version-tag $version"
-sha_ghc_lib_parser_ex=$(shasum -a 256 "$repo_dir"/ghc-lib-parser-ex/ghc-lib-parser-ex-"$version".tar.gz | awk '{ print $1 }')
+# sha_ghc_lib_parser_ex=$(shasum -a 256 "$repo_dir"/ghc-lib-parser-ex/ghc-lib-parser-ex-"$version".tar.gz | awk '{ print $1 }')
+set -e
 
 # Hlint
 
@@ -373,9 +379,7 @@ packages:
   - .
 extra-deps:
   - archive: $repo_dir/ghc-lib/ghc-lib-parser-$version.tar.gz
-    sha256: "$sha_ghc_lib_parser"
   - archive: $repo_dir/ghc-lib-parser-ex/ghc-lib-parser-ex-$version.tar.gz
-    sha256: "$sha_ghc_lib_parser_ex"
 ghc-options:
     "$DOLLAR$everything": -j
     "$DOLLAR$locals": -ddump-to-file -ddump-hi -Werror=unused-imports -Werror=unused-local-binds -Werror=unused-top-binds -Werror=orphans
@@ -397,17 +401,34 @@ if ! [ "$no_builds" == --no-builds ]; then
   # Again, wrong to pass $resolver_flag here.
 
   # Build hlint.
-  eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "build"
+  if [ $(uname) == 'Darwin' ]; then
+    eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "build"
+  else
+    eval "stack" "$stack_yaml_flag" "build"
+  fi
 
   # Run its tests.
-  eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "--test"
+  if [ $(uname) == 'Darwin' ]; then
+    eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "--test"
+  else
+    eval "stack" "$stack_yaml_flag" "run" "--" "--test"
+  fi
 
   # Test there are no changes to 'hints.md'.
-  eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "hlint" "--generate-summary"
+  if [ $(uname) == 'Darwin' ]; then
+    eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "hlint" "--generate-summary"
+  else
+    eval "stack" "$stack_yaml_flag" "run" "--" "hlint" "--generate-summary"
+  fi
+
   git diff --exit-code hints.md
 
   # Run it on its own source.
-  eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "src"
+  if [ $(uname) == 'Darwin' ]; then
+    eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "src"
+  else
+    eval "stack" "$stack_yaml_flag" "run" "--" "src"
+  fi
 fi
 
 # --
@@ -442,9 +463,8 @@ eval "stack" "$stack_yaml_flag" "sdist" "." "--tar-dir" "."
 #   - Depending on the contents of `$with_haddock_flag`. Also,
 # - Run ghc-lib-test-mini-hlint, ghc-lib-test-mini-compile and the
 #   hlint test suite.
-tmp_dir="$HOME/tmp"
-mkdir -p "$tmp_dir"
-(cd "$HOME"/tmp && hlint-from-scratch-cabal-build-test.sh  \
+tmp_dir=$(mktemp -d)
+(cd "$tmp_dir" && hlint-from-scratch-cabal-build-test.sh  \
      "$cabal_with_ghc_flag"                                \
      --version-tag="$version"                              \
      --ghc-lib-dir="$repo_dir/ghc-lib"                     \

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euxo pipefail
 
 prog=$(basename "$0")
 opt_args="
@@ -27,11 +27,13 @@ fi
 
 pushd "$repo_dir"
 
-if [ ! -d "ghc" ]; then
-    git clone https://gitlab.haskell.org/ghc/ghc.git --recursive
-    pushd "ghc"
-    git fetch origin --tags
-    popd
+if false; then
+  if [ ! -d "ghc" ]; then
+      git clone https://gitlab.haskell.org/ghc/ghc.git --recursive
+      pushd "ghc"
+      git fetch origin --tags
+      popd
+   fi
 else
    # update checkout to origin/master HEAD. not used right now.
    if false; then
@@ -50,20 +52,22 @@ else
    fi
 fi
 
-if [ ! -d "stack" ]; then
-    git clone git@github.com:commercialhaskell/stack.git
-    pushd "stack"
-    git fetch origin --tags
-    popd
+if false; then
+  if [ ! -d "stack" ]; then
+      git clone https://github.com/commercialhaskell/stack.git
+      pushd "stack"
+      git fetch origin --tags
+      popd
+  fi
 else
     echo "skip clone stack..."
 fi
 
 if [ ! -d "ghc-lib" ]; then
-    git clone git@github.com:shayne-fletcher/ghc-lib.git
+    git clone https://github.com/shayne-fletcher/ghc-lib.git
     pushd "ghc-lib"
     git fetch origin --tags
-    git clone --recursive git@gitlab.haskell.org:ghc/ghc.git
+    git clone https://gitlab.haskell.org/ghc/ghc.git --recursive
     pushd "ghc"
     git fetch origin --tags
     popd
@@ -73,7 +77,7 @@ else
 fi
 
 if [ ! -d "ghc-lib-parser-ex" ]; then
-    git clone git@github.com:shayne-fletcher/ghc-lib-parser-ex.git
+    git clone https://github.com/shayne-fletcher/ghc-lib-parser-ex.git
     pushd "ghc-lib-parser-ex"
     git fetch origin --tags
     popd
@@ -81,7 +85,7 @@ else
     echo "skip clone ghc-lib-parser-ex..."
 fi
 if [ ! -d "hlint" ]; then
-    git clone git@github.com:ndmitchell/hlint.git
+    git clone https://github.com/ndmitchell/hlint.git
     pushd "hlint"
     git fetch origin --tags
     popd

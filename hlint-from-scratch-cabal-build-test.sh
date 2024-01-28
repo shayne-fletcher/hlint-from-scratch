@@ -24,7 +24,7 @@ opts:
 "
 usage="usage: $prog ARGS"
 
-ghc_version=""
+ghc_version="$(ghc --version | sed -e 's/The Glorious Glasgow Haskell Compilation System, version //g' -e 's/^/ghc-/g')"
 version_tag=""
 ghc_lib_dir=""
 ghc_lib_parser_ex_dir=""
@@ -84,17 +84,18 @@ done
 
 set -u
 
-[ ! -f "$HOME/$ghc_version/bin/ghc" ] && { echo "$HOME/$ghc_version/bin/ghc not found" && exit 1; }
-PATH="$HOME/$ghc_version/bin:$PATH"
-export PATH
+if [ -d "$HOME/$ghc_version" ]; then
+  PATH="$HOME/$ghc_version/bin:$PATH"
+  export PATH
+fi
 
 # Make sure cabal-install is up-to-date with the most recent
 # available. At this time there aren't build plans for compilers >
 # ghc-9.2.4.
-(PATH=$HOME/ghc-9.2.4/bin:$PATH; export PATH && \
-     cabal update && \
-     cabal new-install cabal-install --overwrite-policy=always \
-)
+# (PATH=$HOME/ghc-9.2.4/bin:$PATH; export PATH && \
+#      cabal update && \
+#      cabal new-install cabal-install --overwrite-policy=always \
+# )
 
 echo "cabal-install: $(which cabal)"
 echo "cabal-install version: $(cabal -V)"
