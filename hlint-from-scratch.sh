@@ -254,7 +254,7 @@ fi
 
 # ghc-lib-parser-ex
 
-cd "$repo_dir"/ghc-lib-parser-ex && git checkout .
+cd ../ghc-lib-parser-ex && git checkout .
 branch=$(git rev-parse --abbrev-ref HEAD)
 
 # if the flavor indicates ghc's master branch get on
@@ -347,7 +347,7 @@ set -e
 
 # Hlint
 
-cd "$repo_dir"/hlint && git checkout .
+cd ../hlint && git checkout .
 branch=$(git rev-parse --abbrev-ref HEAD)
 # if the flavor indicates ghc's master branch get on hlint's
 # 'ghc-next' branch ...
@@ -384,8 +384,8 @@ resolver: $resolver
 packages:
   - .
 extra-deps:
-  - archive: $repo_dir_stripped/ghc-lib/ghc-lib-parser-$version.tar.gz
-  - archive: $repo_dir_stripped/ghc-lib-parser-ex/ghc-lib-parser-ex-$version.tar.gz
+  - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-$version.tar.gz
+  - archive: ${repo_dir_stripped}/ghc-lib-parser-ex/ghc-lib-parser-ex-$version.tar.gz
 ghc-options:
     "$DOLLAR$everything": -j
     "$DOLLAR$locals": -ddump-to-file -ddump-hi -Werror=unused-imports -Werror=unused-local-binds -Werror=unused-top-binds -Werror=orphans
