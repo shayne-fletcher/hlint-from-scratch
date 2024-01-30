@@ -254,7 +254,8 @@ fi
 
 # ghc-lib-parser-ex
 
-cd ../ghc-lib-parser-ex && git checkout .
+cd "$repo_dir"/ghc-lib-parser-ex && git checkout .
+
 branch=$(git rev-parse --abbrev-ref HEAD)
 
 # if the flavor indicates ghc's master branch get on
@@ -298,7 +299,9 @@ if [[ "$build_comp_version" == 9.8.* ]]; then
   allow_newer="allow-newer: True"
 fi
 
-repo_dir_stripped=$(echo "${repo_dir}" | sed -e "s;^/./;/;g") # peel off leading /c if neccessary for this
+# windows hack: repo_dir_stripped is the path with ^/[a-z]/ removed
+# e.g. /c/users/... -> /users/...
+repo_dir_stripped=$(echo "${repo_dir}" | sed -e "s;^/./;/;g")
 
 if [[ -n "$stack_yaml" ]]; then
   echo "Seeding stack-head.yaml from $stack_yaml"
@@ -342,12 +345,22 @@ stack_yaml_flag="--stack-yaml $stack_yaml"
 set +e
 cat "$stack_yaml"
 eval "$runhaskell $stack_yaml_flag CI.hs -- $no_builds $stack_yaml_flag --version-tag $version"
-# sha_ghc_lib_parser_ex=$(shasum -a 256 "$repo_dir"/ghc-lib-parser-ex/ghc-lib-parser-ex-"$version".tar.gz | awk '{ print $1 }')
+if false; then
+  # This is support for writing the sha256 fields in stack-head.yaml files
+  # Use like:
+  # extra-deps:\n\
+  #   # ghc-lib-parser\n\
+  #   - archive: ${repo_dir}/ghc-lib/ghc-lib-parser-${version}.tar.gz\n\
+  #     sha256: \"${sha_ghc_lib_parser}\";\
+  # Disabled at the moment for lack of 'shasum' on Windows.
+  sha_ghc_lib_parser_ex=$(shasum -a 256 "$repo_dir"/ghc-lib-parser-ex/ghc-lib-parser-ex-"$version".tar.gz | awk '{ print $1 }')
+fi
+
 set -e
 
 # Hlint
 
-cd ../hlint && git checkout .
+cd "$repo_dir"/hlint && git checkout .
 branch=$(git rev-parse --abbrev-ref HEAD)
 # if the flavor indicates ghc's master branch get on hlint's
 # 'ghc-next' branch ...
@@ -372,8 +385,6 @@ if [[ -z "$GHC_FLAVOR" \
   # ghc-flavor >= ghc-master
   resolver=nightly-2023-11-24 # ghc-9.6.3
 else
-  # ghc-flavor can be ghc-9.6.* (current) or ghc-9.8.1 (pending). in
-  # either case, 9.4.* is a valid choice.
   resolver=lts-21.6 # ghc-9.4.5
 fi
 
@@ -407,33 +418,33 @@ if ! [ "$no_builds" == --no-builds ]; then
   # Again, wrong to pass $resolver_flag here.
 
   # Build hlint.
-  if [ $(uname) == 'Darwin' ]; then
-    eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "build"
-  else
+  if [ $(uname) != 'Darwin' ]; then
     eval "stack" "$stack_yaml_flag" "build"
+  else
+    eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "build"
   fi
 
   # Run its tests.
-  if [ $(uname) == 'Darwin' ]; then
-    eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "--test"
-  else
+  if [ $(uname) != 'Darwin' ]; then
     eval "stack" "$stack_yaml_flag" "run" "--" "--test"
+  else
+    eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "--test"
   fi
 
   # Test there are no changes to 'hints.md'.
-  if [ $(uname) == 'Darwin' ]; then
-    eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "hlint" "--generate-summary"
-  else
+  if [ $(uname) != 'Darwin' ]; then
     eval "stack" "$stack_yaml_flag" "run" "--" "hlint" "--generate-summary"
+  else
+    eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "hlint" "--generate-summary"
   fi
 
   git diff --exit-code hints.md
 
   # Run it on its own source.
-  if [ $(uname) == 'Darwin' ]; then
-    eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "src"
-  else
+  if [ $(uname) != 'Darwin' ]; then
     eval "stack" "$stack_yaml_flag" "run" "--" "src"
+  else
+    eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "src"
   fi
 fi
 
