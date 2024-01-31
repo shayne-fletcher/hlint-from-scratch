@@ -238,18 +238,15 @@ else
 fi
 #sha_ghc_lib_parser=$(shasum -a 256 "$repo_dir"/ghc-lib/ghc-lib-parser-"$version".tar.gz | awk '{ print $1 }')
 
-# temp disabled while i focus on minimal set of github actions
-if false; then
-  if [ -z "$GHC_FLAVOR" ]; then
-      # If the above worked out, update CI.hs.
-      if [ $(uname == "Darwin") ]; then
-          sed -i '' "s/current = \".*\" -- .*/current = \"$HEAD\" -- $today/g" "$repo_dir"/ghc-lib/CI.hs
-      else
-          sed -i'' "s/current = \".*\" -- .*/current = \"$HEAD\" -- $today/g" "$repo_dir"/ghc-lib/CI.hs
-      fi
-      # Report.
-      grep "current = .*" "$repo_dir"/ghc-lib/CI.hs
-  fi
+if [ -z "$GHC_FLAVOR" ]; then
+    # If the above worked out, update CI.hs.
+    if [ $(uname) == "Darwin" ]; then
+        sed -i '' "s/current = \".*\" -- .*/current = \"$HEAD\" -- $today/g" "$repo_dir"/ghc-lib/CI.hs
+    else
+        sed -i'' "s/current = \".*\" -- .*/current = \"$HEAD\" -- $today/g" "$repo_dir"/ghc-lib/CI.hs
+    fi
+    # Report.
+    grep "current = .*" "$repo_dir"/ghc-lib/CI.hs
 fi
 
 # ghc-lib-parser-ex
