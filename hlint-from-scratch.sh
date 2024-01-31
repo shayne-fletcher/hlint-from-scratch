@@ -417,35 +417,24 @@ EOF
 if ! [ "$no_builds" == --no-builds ]; then
   # Again, wrong to pass $resolver_flag here.
 
-  # Build hlint.
-  if [ $(uname) != 'Darwin' ]; then
-    eval "stack" "$stack_yaml_flag" "build"
-  else
-    eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "build"
+  C_INCLUDE_PATH=""
+  if [ $(uname) == 'Darwin' ]; then
+      C_INCLUDE_PATH="$(xcrun --show-sdk-path)"/usr/include/ffi
   fi
+
+  # Build hlint.
+  eval "C_INCLUDE_PATH=$C_INCLUDE_PATH" "stack" "$stack_yaml_flag" "build"
 
   # Run its tests.
-  if [ $(uname) != 'Darwin' ]; then
-    eval "stack" "$stack_yaml_flag" "run" "--" "--test"
-  else
-    eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "--test"
-  fi
+  eval "C_INCLUDE_PATH=$C_INCLUDE_PATH" "stack" "$stack_yaml_flag" "run" "--" "--test"
 
   # Test there are no changes to 'hints.md'.
-  if [ $(uname) != 'Darwin' ]; then
-    eval "stack" "$stack_yaml_flag" "run" "--" "hlint" "--generate-summary"
-  else
-    eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "hlint" "--generate-summary"
-  fi
+  eval "C_INCLUDE_PATH=$C_INCLUDE_PATH" "stack" "$stack_yaml_flag" "run" "--" "hlint" "--generate-summary"
 
   git diff --exit-code hints.md
 
   # Run it on its own source.
-  if [ $(uname) != 'Darwin' ]; then
-    eval "stack" "$stack_yaml_flag" "run" "--" "src"
-  else
-    eval "C_INCLUDE_PATH=$(xcrun --show-sdk-path)/usr/include/ffi" "stack" "$stack_yaml_flag" "run" "--" "src"
-  fi
+  eval "C_INCLUDE_PATH=$C_INCLUDE_PATH" "stack" "$stack_yaml_flag" "run" "--" "src"
 fi
 
 # --
