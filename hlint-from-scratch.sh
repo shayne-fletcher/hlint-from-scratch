@@ -132,6 +132,7 @@ fi
 
 set -u
 
+echo "uname: $(uname)"
 echo "ghc-flavor: $GHC_FLAVOR"
 echo "stack-yaml: $stack_yaml"
 echo "stack-yaml flag: $stack_yaml_flag"
@@ -243,7 +244,6 @@ if [ -z "$GHC_FLAVOR" ]; then
 else
     eval "$cmd" "$GHC_FLAVOR"
 fi
-#sha_ghc_lib_parser=$(shasum -a 256 "$repo_dir"/ghc-lib/ghc-lib-parser-"$version".tar.gz | awk '{ print $1 }')
 
 if [ -z "$GHC_FLAVOR" ]; then
     # If the above worked out, update CI.hs.
@@ -256,9 +256,18 @@ if [ -z "$GHC_FLAVOR" ]; then
     grep "current = .*" "$repo_dir"/ghc-lib/CI.hs
 fi
 
+ghc_lib_parser_sha256=""
+if [[ $(uname) == 'Darwin' ]]; then
+  sha_ghc_lib_parser="$(shasum -a 256 "$repo_dir"/ghc-lib/ghc-lib-parser-"$version".tar.gz | awk '{ print $1 }')"
+  ghc_lib_parser_sha256="sha256: \"${sha_ghc_lib_parser}\""
+fi
+
 # ghc-lib-parser-ex
 
 cd "$repo_dir"/ghc-lib-parser-ex && git checkout .
+if [ -z "ghc_lib_parser_sha256" ]; then
+  rm -f *.yaml.lock
+fi
 
 branch=$(git rev-parse --abbrev-ref HEAD)
 
@@ -319,15 +328,16 @@ if [[ -n "$stack_yaml" ]]; then
 $allow_newer\n\
 # --\n\
 extra-deps:\n\
-  # ghc-lib-parser\n\
-  - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-${version}.tar.gz;\
+  - archive: ${repo_dir}/ghc-lib/ghc-lib-parser-${version}.tar.gz\n\
+    ${ghc_lib_parser_sha256};\
 g" | \
   sed -e "s;^resolver:.*$;resolver: ${resolver};g" > stack-head.yaml
 else
   cat > stack-head.yaml <<EOF
 resolver: $resolver
 extra-deps:
-  - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-$version.tar.gz
+  - archive: ${repo_dir}/ghc-lib/ghc-lib-parser-${version}.tar.gz\n\
+    ${ghc_lib_parser_sha256};\
 ghc-options:
     "$DOLLAR$everything": -j
     "$DOLLAR$locals": -ddump-to-file -ddump-hi -Wall -Wno-name-shadowing -Wunused-imports
@@ -346,25 +356,22 @@ stack_yaml=stack-head.yaml
 stack_yaml_flag="--stack-yaml $stack_yaml"
 # No need to pass $resolver_flag here, we fixed the resolver in
 # 'stack-head.yaml'.
-set +e
 cat "$stack_yaml"
 eval "$runhaskell $stack_yaml_flag CI.hs -- $no_builds $stack_yaml_flag --version-tag $version"
-if false; then
-  # This is support for writing the sha256 fields in stack-head.yaml files
-  # Use like:
-  # extra-deps:\n\
-  #   # ghc-lib-parser\n\
-  #   - archive: ${repo_dir}/ghc-lib/ghc-lib-parser-${version}.tar.gz\n\
-  #     sha256: \"${sha_ghc_lib_parser}\";\
-  # Disabled at the moment for lack of 'shasum' on Windows.
-  sha_ghc_lib_parser_ex=$(shasum -a 256 "$repo_dir"/ghc-lib-parser-ex/ghc-lib-parser-ex-"$version".tar.gz | awk '{ print $1 }')
-fi
 
-set -e
+ghc_lib_parser_ex_sha256=""
+if [ $(uname) == 'Darwin' ]; then
+  sha_ghc_lib_parser_ex=$(shasum -a 256 "$repo_dir"/ghc-lib-parser-ex/ghc-lib-parser-ex-"$version".tar.gz | awk '{ print $1 }')
+  ghc_lib_parser_sha256_ex="sha256: \"${sha_ghc_lib_parser_ex}\""
+fi
 
 # Hlint
 
 cd "$repo_dir"/hlint && git checkout .
+if [ -z "$ghc_lib_parser_sha256" ] || [ -z "$ghc_lib_parser_ex_sha256" ]; then
+  rm -f *.yaml.lock
+fi
+
 branch=$(git rev-parse --abbrev-ref HEAD)
 # if the flavor indicates ghc's master branch get on hlint's
 # 'ghc-next' branch ...
@@ -397,10 +404,12 @@ fi
 cat > stack-head.yaml <<EOF
 resolver: $resolver
 packages:
-  - .
+- .
 extra-deps:
-  - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-$version.tar.gz
+  - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-${version}.tar.gz
+    ${ghc_lib_parser_sha256}
   - archive: ${repo_dir_stripped}/ghc-lib-parser-ex/ghc-lib-parser-ex-$version.tar.gz
+    ${ghc_lib_parser_sha256_ex}
 ghc-options:
     "$DOLLAR$everything": -j
     "$DOLLAR$locals": -ddump-to-file -ddump-hi -Werror=unused-imports -Werror=unused-local-binds -Werror=unused-top-binds -Werror=orphans
