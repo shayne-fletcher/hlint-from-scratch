@@ -196,7 +196,7 @@ if "$with_haddock"; then
 fi
 
 cabal_project="$build_dir_for_this_ghc/cabal.project"
-if [ $(uname) == "Darwin" || $(uname) == "Linux"]; then
+if [[ $(uname) == "Darwin" || $(uname) == "Linux"]]; then
   # these tests have issues on windows
   echo -n > "$build_dir_for_this_ghc"/ghc-lib-test-mini-hlint "cabal -v0 new-run exe:ghc-lib-test-mini-hlint --project-file $cabal_project --  "
   echo -n > "$build_dir_for_this_ghc"/ghc-lib-test-mini-compile "cabal -v0 new-run exe:ghc-lib-test-mini-compile --project-file $cabal_project --  "
