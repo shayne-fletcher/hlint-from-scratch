@@ -43,7 +43,7 @@ args="
     Reuse an existing GHC clone in ghc-lib-parser.
 
   --no-builds
-    Don't build & test ghc-lib packages and examples.
+   Don't build & test ghc-lib packages and examples.
 
   --no-cabal
     Skip building the hlint stack as a cabal project.
@@ -164,6 +164,8 @@ fi
 
 cd "$repo_dir"/ghc-lib
 
+git checkout ghc-next
+
 if ! [[ -f ./ghc-lib-gen.cabal ]]; then
     echo "Missing 'ghc-lib-gen.cabal'."
     echo "This script should be executed from a ghc-lib checkout directory."
@@ -196,9 +198,12 @@ if [ -z "$GHC_FLAVOR" ]; then
   # If $HEAD agrees with the "last tested at" SHA in CI.hs stop here.
   current=$(grep "current = .*" CI.hs | grep -o "\".*\"" | cut -d "\"" -f 2)
   echo "CI.hs (last tested at): $current"
-  if [[ "$current" == "$HEAD" ]]; then
-    echo "The last \"tested at\" SHA (\"$current\") hasn't changed"
-    exit 99 # So as to stop e.g. stop 'hlint-from-scratch-matrix-build.sh' too.
+  # Skip this check in CI
+  if [ -z "${GHCLIB_AZURE}"]; then
+      if [[ "$current" == "$HEAD" ]]; then
+          echo "The last \"tested at\" SHA (\"$current\") hasn't changed"
+          exit 99 # So as to stop e.g. stop 'hlint-from-scratch-matrix-build.sh' too.
+      fi
   fi
 
   # $HEAD is new. Summarize the new commits.
