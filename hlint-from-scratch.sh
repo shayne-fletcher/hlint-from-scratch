@@ -362,7 +362,7 @@ eval "$runhaskell $stack_yaml_flag CI.hs -- $no_builds $stack_yaml_flag --versio
 ghc_lib_parser_ex_sha256=""
 if [ $(uname) == 'Darwin' ]; then
   sha_ghc_lib_parser_ex=$(shasum -a 256 "$repo_dir"/ghc-lib-parser-ex/ghc-lib-parser-ex-"$version".tar.gz | awk '{ print $1 }')
-  ghc_lib_parser_sha256_ex="sha256: \"${sha_ghc_lib_parser_ex}\""
+  ghc_lib_parser_ex_sha256="sha256: \"${sha_ghc_lib_parser_ex}\""
 fi
 
 # Hlint
@@ -409,7 +409,7 @@ extra-deps:
   - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-${version}.tar.gz
     ${ghc_lib_parser_sha256}
   - archive: ${repo_dir_stripped}/ghc-lib-parser-ex/ghc-lib-parser-ex-$version.tar.gz
-    ${ghc_lib_parser_sha256_ex}
+    ${ghc_lib_parser_ex_sha256}
 ghc-options:
     "$DOLLAR$everything": -j
     "$DOLLAR$locals": -ddump-to-file -ddump-hi -Werror=unused-imports -Werror=unused-local-binds -Werror=unused-top-binds -Werror=orphans
