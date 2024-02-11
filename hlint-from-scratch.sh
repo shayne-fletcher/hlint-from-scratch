@@ -265,7 +265,7 @@ fi
 # ghc-lib-parser-ex
 
 cd "$repo_dir"/ghc-lib-parser-ex && git checkout .
-if [ -z "ghc_lib_parser_sha256" ]; then
+if [ -z "$ghc_lib_parser_sha256" ]; then
   rm -f *.yaml.lock
 fi
 
@@ -328,7 +328,7 @@ if [[ -n "$stack_yaml" ]]; then
 $allow_newer\n\
 # --\n\
 extra-deps:\n\
-  - archive: ${repo_dir}/ghc-lib/ghc-lib-parser-${version}.tar.gz\n\
+  - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-${version}.tar.gz\n\
     ${ghc_lib_parser_sha256};\
 g" | \
   sed -e "s;^resolver:.*$;resolver: ${resolver};g" > stack-head.yaml
@@ -336,7 +336,7 @@ else
   cat > stack-head.yaml <<EOF
 resolver: $resolver
 extra-deps:
-  - archive: ${repo_dir}/ghc-lib/ghc-lib-parser-${version}.tar.gz\n\
+  - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-${version}.tar.gz\n\
     ${ghc_lib_parser_sha256};\
 ghc-options:
     "$DOLLAR$everything": -j
