@@ -394,7 +394,7 @@ if [[ -z "$GHC_FLAVOR" \
    || "$GHC_FLAVOR" == "ghc-master"
  ]]; then
   # ghc-flavor >= ghc-master
-  resolver=nightly-2023-11-24 # ghc-9.6.3
+  resolver=lts-22.11 # ghc-9.6.4
 else
   resolver=lts-21.6 # ghc-9.4.5
 fi
