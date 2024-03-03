@@ -4,7 +4,7 @@ on:
   pull_request:
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * 1-5' # 00:00 mon-fri
+    - cron: '0 0 * * *' # every day
 jobs:
   hlint-from-scratch-ubuntu:
     name: ${{ matrix.os }}
