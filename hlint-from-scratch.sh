@@ -427,7 +427,8 @@ EOF
 
 # phase: hlint: stack build/test
 #if true; then
-if ! [ "$no_builds" == --no-builds ]; then
+if [ true ]; then
+# if ! [ "$no_builds" == --no-builds ]; then
   # Again, wrong to pass $resolver_flag here.
 
   C_INCLUDE_PATH=""
