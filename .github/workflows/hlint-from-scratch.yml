@@ -24,10 +24,14 @@ jobs:
         shell: bash
       - run: |-
           cd "$HOME"/project/hlint
-          git checkout ghc-next
           git fetch origin
+          git checkout ghc-9.10.1
           git rebase origin/master
+          git checkout ghc-next
+          git rebase ghc-9.10.1
         shell: bash
       - run: cabal update
+      - run: ./hlint-from-scratch.sh --ghc-flavor="ghc-9.10.1" --stack-yaml=stack-exact.yaml --resolver=ghc-9.6.4 --no-checkout
+        shell: bash
       - run: ./hlint-from-scratch.sh --ghc-flavor="" --stack-yaml=stack-exact.yaml --resolver=ghc-9.6.4 --no-checkout
         shell: bash

@@ -212,7 +212,6 @@ if [ -z "$GHC_FLAVOR" ]; then
   # $HEAD is new. Summarize the new commits.
   (cd ghc && PAGER=cat git show $current..$HEAD --compact-summary)
    echo "-- "
-
 fi
 
 today=$(date -u +'%Y-%m-%d')
@@ -220,7 +219,7 @@ if [[ -z "$GHC_FLAVOR" \
    || "$GHC_FLAVOR" == "ghc-master" ]]; then
   version="0.""$(date -u +'%Y%m%d')"
 else
-  flavor=$([[ "$GHC_FLAVOR" =~ (ghc\-)([0-9])\.([0-9])\.([0-9]) ]] && echo "${BASH_REMATCH[2]}.${BASH_REMATCH[3]}.${BASH_REMATCH[4]}")
+  flavor=$([[ "$GHC_FLAVOR" =~ (ghc\-)([0-9])\.([0-9][0-9]?)\.([0-9]) ]] && echo "${BASH_REMATCH[2]}.${BASH_REMATCH[3]}.${BASH_REMATCH[4]}")
   version="$flavor"".""$(date -u +'%Y%m%d')"
 fi
 
@@ -279,13 +278,13 @@ if [[ -z "$GHC_FLAVOR" \
     echo "Not on ghc-next. Trying 'git checkout ghc-next'"
     git checkout ghc-next
   fi
-# if the flavor indicates ghc's 9.8.1 branch get on
+# if the flavor indicates ghc's 9.10.1 branch get on
 # ghc-lib-parser-ex's 'ghc-next' branch (yes, ghc-next) ...
-# elif [[ "$GHC_FLAVOR" == "ghc-9.8.1" ]]; then
-#   if [[ "$branch" != "ghc-next" ]]; then
-#     echo "Not on ghc-next. Trying 'git checkout ghc-next'"
-#     git checkout ghc-next
-#   fi
+elif [[ "$GHC_FLAVOR" == "ghc-9.10.1" ]]; then
+  if [[ "$branch" != "ghc-next" ]]; then
+    echo "Not on ghc-next. Trying 'git checkout ghc-next'"
+    git checkout ghc-next
+  fi
 #... else it's a released flavor, get on branch ghc-lib-parser-ex's
 #'master' branch
 else
@@ -382,6 +381,11 @@ if [[ -z "$GHC_FLAVOR" \
     echo "Not on ghc-next. Trying 'git checkout ghc-next'"
     git checkout ghc-next
   fi
+elif [[ "$GHC_FLAVOR" == "ghc-9.10.1" ]]; then
+  if [[ "$branch" != "ghc-9.10.1" ]]; then
+    echo "Not on ghc-9.10.1. Trying 'git checkout ghc-9.10.1'"
+    git checkout ghc-9.10.1
+  fi
 else
   if [[ "$branch" != "master" ]]; then
       echo "Not on master. Trying 'git checkout master'"
@@ -391,7 +395,8 @@ fi
 
 # We're stuck with only curated resolvers for hlint at this time.
 if [[ -z "$GHC_FLAVOR" \
-   || "$GHC_FLAVOR" == "ghc-master"
+   || "$GHC_FLAVOR" == "ghc-master" \
+   || "$GHC_FLAVOR" == "ghc-9.10.1"
  ]]; then
   # ghc-flavor >= ghc-master
   resolver=lts-22.11 # ghc-9.6.4
