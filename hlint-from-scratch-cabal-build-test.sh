@@ -153,7 +153,7 @@ if "$no_threaded_rts"; then
 fi
 
 allow_newer=""
-extra_constraints="alex == 3.5.0.0, " #https://gitlab.haskell.org/ghc/ghc/-/issues/24583
+extra_constraints=""
 # Use like this if you have to:
 if [ "$ghc_version" == "ghc-9.8.1" ]; then
     :
