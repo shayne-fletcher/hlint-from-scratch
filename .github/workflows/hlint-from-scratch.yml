@@ -16,6 +16,10 @@ jobs:
         os: [ubuntu, macos, windows]
     steps:
       - uses: actions/checkout@v4
+      - uses: haskell-actions/setup@v2
+        with:
+          enable-stack: true
+          stack-version: 'latest'
       - run: brew install automake
         if: matrix.os == 'macos'
       - run: echo "GHCLIB_AZURE='1'" >> $GITHUB_ENV

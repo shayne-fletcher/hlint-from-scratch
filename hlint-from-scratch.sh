@@ -30,7 +30,7 @@ args="
   --repo-dir=ARG
     A directory of git clones. Defaults to $HOME/project.
 
-  --stack-yaml=ARG
+_________  --stack-yaml=ARG
     Stack configuration file.
 
   --resolver=ARG
