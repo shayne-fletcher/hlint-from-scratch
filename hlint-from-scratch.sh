@@ -201,7 +201,7 @@ if [ -z "$GHC_FLAVOR" ]; then
   echo "CI.hs (last tested at): $current"
   # Skip this check in CI
   set +u
-  if [ -z "${GHCLIB_AZURE}"]; then
+  if [ -z "${GHCLIB_AZURE}" ]; then
       if [[ "$current" == "$HEAD" ]]; then
           echo "The last \"tested at\" SHA (\"$current\") hasn't changed"
           exit 99 # So as to stop e.g. stop 'hlint-from-scratch-matrix-build.sh' too.
