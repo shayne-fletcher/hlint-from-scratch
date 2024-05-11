@@ -330,7 +330,6 @@ extra-deps:\n\
   - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-${version}.tar.gz\n\
     ${ghc_lib_parser_sha256};\
 g" | \
-  sed -e "s;- extra-1.7.14;-../extra;g" | \
   sed -e "s;^resolver:.*$;resolver: ${resolver};g" > stack-head.yaml
 else
   cat > stack-head.yaml <<EOF
