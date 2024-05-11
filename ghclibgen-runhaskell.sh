@@ -23,7 +23,7 @@ for f in "${flavors[@]}"; do
 done
 
 flavors=("ghc-8.10.7")
-resolvers=("lts-18.28" "lts-16.31") # ghc-8.10.7, ghc-8.8.4
+resolvers=("lts-18.28") # "lts-16.31") # ghc-8.10.7, ghc-8.8.4
                                     # can't do ghc-8.6.5 since cabal < 3
 for f in "${flavors[@]}"; do
     for r in "${resolvers[@]}"; do
@@ -74,9 +74,14 @@ resolvers=( "lts-22.4" "lts-21.0" ) # ghc-9.6.3 ghc-9.4.5
 # neither of these resolvers have semaphore-compat so stack-yaml needs an extra-deps
 # extra-deps:
 # - semaphore-compat-1.0.0
-# for f in "${flavors[@]}"; do
-#     for r in "${resolvers[@]}"; do
-#         echo "-- "
-#         stack runhaskell CI.hs --stack-yaml stack.yaml --resolver "$r" --package extra --package optparse-applicative -- --ghc-flavor "$f" --stack-yaml stack.yaml --resolver "$r" --no-checkout
-#     done
-# done
+flavors=("ghc-9.8.1")
+resolvers=( "lts-22.4" "lts-21.0" ) # ghc-9.6.3 ghc-9.4.5
+
+flavors=("ghc-9.8.2")
+resolvers=( "nightly-2024-03-07" ) # ghc-9.8.1
+for f in "${flavors[@]}"; do
+    for r in "${resolvers[@]}"; do
+        echo "-- "
+        stack runhaskell CI.hs --stack-yaml stack.yaml --resolver "$r" --package extra --package optparse-applicative -- --ghc-flavor "$f" --stack-yaml stack.yaml --resolver "$r" --no-checkout
+    done
+done

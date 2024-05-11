@@ -278,13 +278,13 @@ if [[ -z "$GHC_FLAVOR" \
     echo "Not on ghc-next. Trying 'git checkout ghc-next'"
     git checkout ghc-next
   fi
-# if the flavor indicates ghc's 9.10.1 branch get on
-# ghc-lib-parser-ex's 'ghc-next' branch (yes, ghc-next) ...
-elif [[ "$GHC_FLAVOR" == "ghc-9.10.1" ]]; then
-  if [[ "$branch" != "ghc-next" ]]; then
-    echo "Not on ghc-next. Trying 'git checkout ghc-next'"
-    git checkout ghc-next
-  fi
+# # if the flavor indicates ghc's 9.10.1 branch get on
+# # ghc-lib-parser-ex's 'ghc-next' branch (yes, ghc-next) ...
+# elif [[ "$GHC_FLAVOR" == "ghc-9.10.1" ]]; then
+#   if [[ "$branch" != "ghc-next" ]]; then
+#     echo "Not on ghc-next. Trying 'git checkout ghc-next'"
+#     git checkout ghc-next
+#   fi
 #... else it's a released flavor, get on branch ghc-lib-parser-ex's
 #'master' branch
 else
@@ -305,9 +305,9 @@ build_comp_version="$(stack $stack_yaml_flag $resolver_flag --silent exec -- ghc
 # If a stack-yaml argument was provided, seed its contents from it
 # otherwise, assume a curated $resolver and create it from scratch.
 
-# Enable 'allow-newer' if using ghc-9.8.1.
+# Enable 'allow-newer' if using ghc-9.10.1.
 allow_newer=""
-if [[ "$build_comp_version" == 9.8.* ]]; then
+if [[ "$build_comp_version" == 9.10.* ]]; then
   allow_newer="allow-newer: True"
 fi
 
@@ -330,6 +330,7 @@ extra-deps:\n\
   - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-${version}.tar.gz\n\
     ${ghc_lib_parser_sha256};\
 g" | \
+  sed -e "s;- extra-1.7.14;-../extra;g" | \
   sed -e "s;^resolver:.*$;resolver: ${resolver};g" > stack-head.yaml
 else
   cat > stack-head.yaml <<EOF
