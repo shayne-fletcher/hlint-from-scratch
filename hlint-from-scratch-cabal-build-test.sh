@@ -154,10 +154,8 @@ fi
 
 allow_newer=""
 extra_constraints=""
-# Use like this if you have to:
-if [ "$ghc_version" == "ghc-9.8.1" ]; then
-    :
-#   allow_newer="allow-newer: ghc-lib:hpc"
+if [ "$ghc_version" == "ghc-9.10.1" ]; then
+  allow_newer="allow-newer: all" # "allow-newer: ghc-lib:hpc"
 #   extra_constraints="th-abstraction==0.6.0.0, text==2.0.1, "
 fi
 # Requires cabal-instal >= 3.8.1.0
@@ -167,6 +165,10 @@ constraints="constraints: $extra_constraints hlint +ghc-lib, ghc-lib-parser-ex -
 cat > cabal.project<<EOF
 packages: */*.cabal
 $allow_newer
+source-repository-package
+  type: git
+  location: https://github.com/shayne-fletcher/text-short.git
+  tag: 0a725f9ce82936629c636bc530d04816cf2162cb
 $constraints
 $haddock
 EOF
