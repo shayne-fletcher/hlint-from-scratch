@@ -399,7 +399,7 @@ if [[ -z "$GHC_FLAVOR" \
    || "$GHC_FLAVOR" == "ghc-9.10.1"
  ]]; then
   # ghc-flavor >= ghc-master
-  resolver=lts-22.11 # ghc-9.6.4
+  resolver=lts-22.19 # ghc-9.6.4 (and it must provide os-string)
 else
   resolver=lts-21.6 # ghc-9.4.5
 fi
