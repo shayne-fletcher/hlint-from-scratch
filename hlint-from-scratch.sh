@@ -416,6 +416,7 @@ extra-deps:
   - directory-1.3.8.5
   - process-1.6.20.0
   - filepath-1.5.2.0
+  - Win32-2.14.0.0
   - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-${version}.tar.gz
     ${ghc_lib_parser_sha256}
   - archive: ${repo_dir_stripped}/ghc-lib-parser-ex/ghc-lib-parser-ex-$version.tar.gz
@@ -434,6 +435,8 @@ flags:
  directory:
    os-string: true
  unix:
+   os-string: true
+ Win32:
    os-string: true
 # Allow out-of-bounds ghc-lib-parser and ghc-lib-parser-ex.
 allow-newer: true
