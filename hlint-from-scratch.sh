@@ -165,7 +165,7 @@ fi
 
 cd "$repo_dir"/ghc-lib
 
-git checkout ghc-next
+# git checkout ghc-next
 
 if ! [[ -f ./ghc-lib-gen.cabal ]]; then
     echo "Missing 'ghc-lib-gen.cabal'."
@@ -417,6 +417,7 @@ extra-deps:
   - process-1.6.20.0
   - filepath-1.5.2.0
   - Win32-2.14.0.0
+  - time-1.12.2
   - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-${version}.tar.gz
     ${ghc_lib_parser_sha256}
   - archive: ${repo_dir_stripped}/ghc-lib-parser-ex/ghc-lib-parser-ex-$version.tar.gz
