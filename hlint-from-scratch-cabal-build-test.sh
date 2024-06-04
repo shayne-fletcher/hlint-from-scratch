@@ -154,7 +154,8 @@ fi
 
 allow_newer=""
 extra_constraints=""
-if [ "$ghc_version" == "ghc-9.10.1" ]; then
+# if [ "$ghc_version" == "ghc-9.10.1" ]; then
+if false; then
   allow_newer="allow-newer: all" # "allow-newer: ghc-lib:hpc"
 #   extra_constraints="th-abstraction==0.6.0.0, text==2.0.1, "
 fi
@@ -163,15 +164,22 @@ fi
 constraints="constraints: $extra_constraints hlint +ghc-lib, ghc-lib-parser-ex -auto -no-ghc-lib, ghc-lib $threaded_rts, ghc-lib-parser $threaded_rts"
 
 cat > cabal.project<<EOF
+cat > cabal.project<<EOF
 packages: */*.cabal
 $allow_newer
-source-repository-package
-  type: git
-  location: https://github.com/shayne-fletcher/text-short.git
-  tag: 0a725f9ce82936629c636bc530d04816cf2162cb
 $constraints
 $haddock
 EOF
+
+# packages: */*.cabal
+# $allow_newer
+# source-repository-package
+#   type: git
+#   location: https://github.com/shayne-fletcher/text-short.git
+#   tag: 0a725f9ce82936629c636bc530d04816cf2162cb
+# $constraints
+# $haddock
+# EOF
 
 cat cabal.project
 
