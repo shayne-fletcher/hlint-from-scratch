@@ -411,6 +411,11 @@ resolver: $resolver
 packages:
 - .
 extra-deps:
+  - os-string-2.0.3
+  - unix-2.8.5.1
+  - directory-1.3.8.5
+  - process-1.6.20.0
+  - filepath-1.5.2.0
   - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-${version}.tar.gz
     ${ghc_lib_parser_sha256}
   - archive: ${repo_dir_stripped}/ghc-lib-parser-ex/ghc-lib-parser-ex-$version.tar.gz
@@ -426,6 +431,10 @@ flags:
  ghc-lib-parser-ex:
    auto: false
    no-ghc-lib: false
+ directory:
+   os-string: true
+ unix:
+   os-string: true
 # Allow out-of-bounds ghc-lib-parser and ghc-lib-parser-ex.
 allow-newer: true
 EOF
