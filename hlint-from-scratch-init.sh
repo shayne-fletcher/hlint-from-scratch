@@ -9,7 +9,7 @@ OPTS is a quoted string with contents e.g: \"\""
 usage="usage: $prog ARG OPTS""
 $opt_args"
 
-repo_dir=""
+repo_dir="$HOME/project"
 while [ "$#" -gt 0 ]; do
     if [[ "$1" == "--help" ]]; then
         echo "$usage" && exit 0

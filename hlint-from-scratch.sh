@@ -30,7 +30,7 @@ args="
   --repo-dir=ARG
     A directory of git clones. Defaults to $HOME/project.
 
-_________  --stack-yaml=ARG
+  --stack-yaml=ARG
     Stack configuration file.
 
   --resolver=ARG
@@ -237,7 +237,8 @@ fi
 
 # ghc-lib
 
-cmd="$runhaskell $stack_yaml_flag $resolver_flag CI.hs -- $stack_yaml_flag $resolver_flag $no_checkout_flag $no_builds --ghc-flavor "
+cmd="cabal run exe:ghc-lib-build-tool -- $no_checkout_flag $no_builds --ghc-flavor "
+
 if [ -z "$GHC_FLAVOR" ]; then
     eval "$cmd" "$HEAD"
 else
@@ -297,7 +298,8 @@ fi
 # If a resolver hasn't been set, set it now to this.
 [[ -z "$resolver" ]] && resolver=nightly-2022-08-04 # ghc-9.2.4
 
-# Record the ghc-version (e.g. 9.8.1).
+# Record the ghc-version (e.g. 9.8.1). Since this is the first time
+# calling stack it will pause for a while to setup here.
 build_comp_version="$(stack $stack_yaml_flag $resolver_flag --silent exec -- ghc --version | sed 's/The Glorious Glasgow Haskell Compilation System, version //g')"
 
 # This an elaborate step to create a config file'stack-head.yaml'.
