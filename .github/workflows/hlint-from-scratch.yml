@@ -16,11 +16,40 @@ jobs:
         os: [ubuntu, macos, windows]
     steps:
       - uses: actions/checkout@v4
-      - uses: haskell-actions/setup@v2
-        with:
-          ghc-version: '9.8.2'
-          enable-stack: true
-          stack-version: 'latest'
+      # - uses: haskell-actions/setup@v2
+      #   with:
+      #     ghc-version: '9.8.2'
+      #     enable-stack: true
+      #     stack-version: 'latest'
+      - run: |-
+          curl -sSL https://get.haskellstack.org/ | sh -s - -f
+          curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 BOOTSTRAP_HASKELL_GHC_VERSION=9.8.2 BOOTSTRAP_HASKELL_CABAL_VERSION=latest BOOTSTRAP_HASKELL_INSTALL_NO_STACK=1 BOOTSTRAP_HASKELL_INSTALL_NO_STACK_HOOK=1 BOOTSTRAP_HASKELL_ADJUST_BASHRC=P sh
+        shell: bash
+      - name: Configure PATH (unix)
+        run: |-
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.cabal/bin" >> $GITHUB_PATH
+          echo "$HOME/.ghcup/bin" >> $GITHUB_PATH
+          echo "$HOME/.ghcup/ghc/9.8.2/bin" >> $GITHUB_PATH
+        shell: bash
+        if: matrix.os == 'ubuntu' || matrix.os == 'macos'
+      - name: Configure PATH (windows)
+        run: |-
+          echo "C:\\Users\\runneradmin\\AppData\\Roaming\\local\\bin" >> $GITHUB_PATH
+          echo "C:\\Users\\runneradmin\\AppData\\Roaming\\cabal\\bin" >> $GITHUB_PATH
+          echo "C:\\ghcup\\bin" >> $GITHUB_PATH
+          echo "C:\\ghcup\\ghc\\9.8.2\\bin" >> $GITHUB_PATH
+        shell: bash
+        if: matrix.os == 'windows'
+      - name: Print diagnostics
+        shell: bash
+        run: |-
+          echo "wich stack: $(which stack)"
+          echo "stack-version: $(stack --version)"
+          echo "wich ghc: $(which ghc)"
+          echo "ghc-version: $(ghc --version)"
+          echo "wich cabal: $(which cabal)"
+          echo "cabal: $(cabal --version)"
       - run: brew install automake
         if: matrix.os == 'macos'
       - run: echo "GHCLIB_AZURE='1'" >> $GITHUB_ENV
@@ -30,7 +59,5 @@ jobs:
       - run: cabal update
       - run: cabal install apply-refact
         if: matrix.os == 'ubuntu'
-      # - run: ./hlint-from-scratch.sh --ghc-flavor="ghc-9.10.1" --stack-yaml=stack-exact.yaml --resolver=ghc-9.6.4 --no-checkout
-      #   shell: bash
       - run: ./hlint-from-scratch.sh --ghc-flavor="" --stack-yaml=stack-exact.yaml --resolver=ghc-9.8.2 --no-checkout
         shell: bash
