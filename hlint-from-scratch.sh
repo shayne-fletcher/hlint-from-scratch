@@ -317,48 +317,57 @@ fi
 # e.g. /c/users/... -> /users/...
 repo_dir_stripped=$(echo "${repo_dir}" | sed -e "s;^/./;/;g")
 
-if [[ -n "$stack_yaml" ]]; then
-  echo "Seeding stack-head.yaml from $stack_yaml"
-  # shellcheck disable=SC2002
-  cat "$stack_yaml" | \
-  # Delete any pre-existing ghc-lib-parser extra dependency.
-  sed -e "s;^.*ghc-lib-parser.*$;;g" | \
-  sed -e "s;^extra-deps:$;\
-# enable ghc-9.8.1 as a build compiler (base-4.19.0)\n\
-# --\n\
-$allow_newer\n\
-# --\n\
-extra-deps:\n\
-  - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-${version}.tar.gz\n\
-    ${ghc_lib_parser_sha256};\
-g" | \
-  sed -e "s;^resolver:.*$;resolver: ${resolver};g" > stack-head.yaml
-else
-  cat > stack-head.yaml <<EOF
-resolver: $resolver
-extra-deps:
-  - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-${version}.tar.gz\n\
-    ${ghc_lib_parser_sha256};\
-ghc-options:
-    "$DOLLAR$everything": -j
-    "$DOLLAR$locals": -ddump-to-file -ddump-hi -Wall -Wno-name-shadowing -Wunused-imports
-flags:
- ghc-lib-parser:
-   threaded-rts: $threaded_rts
-  ghc-lib-parser-ex:
-    auto: false
-    no-ghc-lib: false
+cat > cabal.project<<EOF
+allow-newer: ghc-lib-parser-ex:ghc-lib-parser
+allow-older: ghc-lib-parser-ex:ghc-lib-parser
 packages:
-  - .
+   ./ghc-lib-parser-ex.cabal
+   $(pwd)/../ghc-lib/ghc-lib-parser/ghc-lib-parser.cabal
 EOF
-fi
+
+# if [[ -n "$stack_yaml" ]]; then
+#   echo "Seeding stack-head.yaml from $stack_yaml"
+#   # shellcheck disable=SC2002
+#   cat "$stack_yaml" | \
+#   # Delete any pre-existing ghc-lib-parser extra dependency.
+#   sed -e "s;^.*ghc-lib-parser.*$;;g" | \
+#   sed -e "s;^extra-deps:$;\
+# # enable ghc-9.8.1 as a build compiler (base-4.19.0)\n\
+# # --\n\
+# $allow_newer\n\
+# # --\n\
+# extra-deps:\n\
+#   - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-${version}.tar.gz\n\
+#     ${ghc_lib_parser_sha256};\
+# g" | \
+#   sed -e "s;^resolver:.*$;resolver: ${resolver};g" > stack-head.yaml
+# else
+#   cat > stack-head.yaml <<EOF
+# resolver: $resolver
+# extra-deps:
+#   - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-${version}.tar.gz\n\
+#     ${ghc_lib_parser_sha256};\
+# ghc-options:
+#     "$DOLLAR$everything": -j
+#     "$DOLLAR$locals": -ddump-to-file -ddump-hi -Wall -Wno-name-shadowing -Wunused-imports
+# flags:
+#  ghc-lib-parser:
+#    threaded-rts: $threaded_rts
+#   ghc-lib-parser-ex:
+#     auto: false
+#     no-ghc-lib: false
+# packages:
+#   - .
+# EOF
+# fi
 
 stack_yaml=stack-head.yaml
 stack_yaml_flag="--stack-yaml $stack_yaml"
 # No need to pass $resolver_flag here, we fixed the resolver in
 # 'stack-head.yaml'.
-cat "$stack_yaml"
-eval "$runhaskell $stack_yaml_flag CI.hs -- $no_builds $stack_yaml_flag --version-tag $version"
+# cat "$stack_yaml"
+#eval "$runhaskell $stack_yaml_flag CI.hs -- $no_builds $stack_yaml_flag --version-tag $version"
+cabal run exe:ghc-lib-parser-ex-build-tool -- --version-tag $version
 
 ghc_lib_parser_ex_sha256=""
 if [ $(uname) == 'Darwin' ]; then
