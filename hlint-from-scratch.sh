@@ -195,7 +195,7 @@ fi
 
 # ghc-lib
 
-cmd="cabal run exe:ghc-lib-build-tool -- --ghc-flavor "
+cmd='cabal run exe:ghc-lib-build-tool --constraint="filepath >= 1.5" -- --ghc-flavor '
 
 if [ -z "$GHC_FLAVOR" ]; then
     eval "$cmd" "$HEAD"

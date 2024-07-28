@@ -19,7 +19,7 @@ jobs:
       - uses: haskell-actions/setup@v2
         id: setup-haskell
         with:
-          ghc-version: 9.10.1
+          ghc-version: 9.8.2
           cabal-version: 'latest'
       - name: Install build tools (macOS)
         run: brew install automake
@@ -37,12 +37,12 @@ jobs:
           GHCLIB_AZURE=1; export GHCLIB_AZURE
           pacman -S autoconf automake-wrapper make patch python tar mintty --noconfirm
           ./hlint-from-scratch.sh --init="$HOME/project"
-          ./hlint-from-scratch.sh --ghc-flavor="" --stack-yaml=stack-exact.yaml --resolver=ghc-9.10.1 --no-checkout
+          ./hlint-from-scratch.sh --ghc-flavor="" --stack-yaml=stack-exact.yaml --resolver=ghc-9.8.2 --no-checkout
         if: matrix.os == 'windows'
       - name: Run hlint-from-scratch (unix)
         shell: bash
         run: |-
           GHCLIB_AZURE=1; export GHCLIB_AZURE
           ./hlint-from-scratch.sh --init="$HOME/project"
-          ./hlint-from-scratch.sh --ghc-flavor="" --stack-yaml=stack-exact.yaml --resolver=ghc-9.10.1 --no-checkout
+          ./hlint-from-scratch.sh --ghc-flavor="" --stack-yaml=stack-exact.yaml --resolver=ghc-9.8.2 --no-checkout
         if: matrix.os == 'ubuntu' || matrix.os == 'macos'
