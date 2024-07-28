@@ -30,12 +30,6 @@ args="
   --repo-dir=ARG
     A directory of git clones. Defaults to $HOME/project.
 
-  --stack-yaml=ARG
-    Stack configuration file.
-
-  --resolver=ARG
-    Stack resolver.
-
   --matrix-build
     Invoke matrix build behaviors.
 
@@ -64,11 +58,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 GHC_FLAVOR=""
 no_builds=""
 no_cabal=""
-cabal_with_ghc="$(ghc --version | sed -e 's/The Glorious Glasgow Haskell Compilation System, version //g' -e 's/^/ghc-/g')"
-stack_yaml=""
-stack_yaml_flag=""
-resolver=""
-resolver_flag=""
+cabal_with_ghc="$(echo -n "ghc-$(ghc --numeric-version)")"
 repo_dir="$HOME/project"
 with_haddock_flag="--with-hadock"
 no_threaded_rts=false
@@ -89,12 +79,6 @@ while [ $# -gt 0 ]; do
         exit 0
     elif [[ "$1" =~ --repo-dir=([^[:space:]]+) ]]; then
         repo_dir="${BASH_REMATCH[1]}"
-    elif [[ "$1" =~ --stack-yaml=([^[:space:]]+) ]]; then
-        stack_yaml="${BASH_REMATCH[1]}"
-        stack_yaml_flag="--stack-yaml $stack_yaml"
-    elif [[ "$1" =~ --resolver=([^[:space:]]+) ]]; then
-        resolver="${BASH_REMATCH[1]}"
-        resolver_flag="--resolver $resolver"
     elif [[ "$1" =~ --cabal-with-ghc=([^[:space:]]+) ]]; then
         cabal_with_ghc="${BASH_REMATCH[1]}"
     elif [ "$1" = "--no-checkout" ]; then
@@ -116,6 +100,10 @@ while [ $# -gt 0 ]; do
         no_threaded_rts=true
         no_threaded_rts_flag="--no-threaded-rts"
         echo "-DTHREADED_RTS will not be passed to the C toolchain building ghc-lib-parser & ghc-lib."
+    elif [[ "$1" =~ --stack-yaml=([^[:space:]]+) ]]; then
+        :
+    elif [[ "$1" =~ --resolver=([^[:space:]]+) ]]; then
+        :
     else
         echo "unexpected argument \"$1\""
         echo "$usage" && exit 1
@@ -134,10 +122,6 @@ set -u
 
 echo "uname: $(uname)"
 echo "ghc-flavor: $GHC_FLAVOR"
-echo "stack-yaml: $stack_yaml"
-echo "stack-yaml flag: $stack_yaml_flag"
-echo "resolver: $resolver"
-echo "resolver flag: $resolver_flag"
 echo "repo-dir: $repo_dir"
 echo "no-builds: $no_builds"
 echo "no-cabal: $no_cabal"
@@ -147,21 +131,9 @@ echo "no-threaded-rts: $no_threaded_rts"
 echo "no-threaded-rts-flag: $no_threaded_rts_flag"
 echo "threaded-rts: \"$threaded_rts\""
 
-packages="--package extra --package optparse-applicative"
-runhaskell="stack runhaskell $packages"
 DOLLAR="$"
 locals="locals"
 everything="everything"
-
-# If there's a new release, let's have it.
-if true; then
-  # cd "$repo_dir/stack"
-  # git fetch origin && git merge origin/master
-  # stack install
-  :
-else
-  stack upgrade # Upgrade to the latest official
-fi
 
 cd "$repo_dir"/ghc-lib
 
@@ -175,9 +147,7 @@ fi
 
 if ! [[ -d ./ghc ]]; then
     echo "There is no ghc checkout here to update."
-    echo "Building with ghc-flavor 'ghc-master' to get started."
-    eval "$runhaskell $stack_yaml_flag $resolver_flag CI.hs -- $stack_yaml_flag $resolver_flag --ghc-flavor ghc-master"
-    echo "Now restarting build at the latest GHC commit."
+    exit 1
 fi
 
 # It's common for the git fetch step to report errors of the form
@@ -223,18 +193,6 @@ else
   version="$flavor"".""$(date -u +'%Y%m%d')"
 fi
 
-# Set these both to false for quick iteration. Set false/true for
-# matrix builds.
-if false; then
-    rm -rf ~/.stack/programs/x86_64-osx/"$resolver"
-    :
-fi
-if $matrix_build; then
-  set +e
-  rm -rf ~/.stack/snapshots/x86_64-osx/
-  set -e
-fi
-
 # ghc-lib
 
 cmd="cabal run exe:ghc-lib-build-tool -- $no_checkout_flag $no_builds --ghc-flavor "
@@ -256,18 +214,9 @@ if [ -z "$GHC_FLAVOR" ]; then
     grep "current = .*" "$repo_dir"/ghc-lib/CI.hs
 fi
 
-ghc_lib_parser_sha256=""
-if [[ $(uname) == 'Darwin' ]]; then
-  sha_ghc_lib_parser="$(shasum -a 256 "$repo_dir"/ghc-lib/ghc-lib-parser-"$version".tar.gz | awk '{ print $1 }')"
-  ghc_lib_parser_sha256="sha256: \"${sha_ghc_lib_parser}\""
-fi
-
 # ghc-lib-parser-ex
 
 cd "$repo_dir"/ghc-lib-parser-ex && git checkout .
-if [ -z "$ghc_lib_parser_sha256" ]; then
-  rm -f *.yaml.lock
-fi
 
 branch=$(git rev-parse --abbrev-ref HEAD)
 
@@ -295,92 +244,19 @@ else
   fi
 fi
 
-# If a resolver hasn't been set, set it now to this.
-[[ -z "$resolver" ]] && resolver=nightly-2022-08-04 # ghc-9.2.4
-
-# Record the ghc-version (e.g. 9.8.1). Since this is the first time
-# calling stack it will pause for a while to setup here.
-build_comp_version="$(stack $stack_yaml_flag $resolver_flag --silent exec -- ghc --version | sed 's/The Glorious Glasgow Haskell Compilation System, version //g')"
-
-# This an elaborate step to create a config file'stack-head.yaml'.
-#
-# If a stack-yaml argument was provided, seed its contents from it
-# otherwise, assume a curated $resolver and create it from scratch.
-
-# Enable 'allow-newer' if using ghc-9.10.1.
-allow_newer=""
-if [[ "$build_comp_version" == 9.10.* ]]; then
-  allow_newer="allow-newer: True"
-fi
-
-# windows hack: repo_dir_stripped is the path with ^/[a-z]/ removed
-# e.g. /c/users/... -> /users/...
-repo_dir_stripped=$(echo "${repo_dir}" | sed -e "s;^/./;/;g")
-
 cat > cabal.project<<EOF
 allow-newer: ghc-lib-parser-ex:ghc-lib-parser
 allow-older: ghc-lib-parser-ex:ghc-lib-parser
 packages:
    ./ghc-lib-parser-ex.cabal
-   $(pwd)/../ghc-lib/ghc-lib-parser/ghc-lib-parser.cabal
+   ../ghc-lib/ghc-lib-parser/ghc-lib-parser.cabal
 EOF
 
-# if [[ -n "$stack_yaml" ]]; then
-#   echo "Seeding stack-head.yaml from $stack_yaml"
-#   # shellcheck disable=SC2002
-#   cat "$stack_yaml" | \
-#   # Delete any pre-existing ghc-lib-parser extra dependency.
-#   sed -e "s;^.*ghc-lib-parser.*$;;g" | \
-#   sed -e "s;^extra-deps:$;\
-# # enable ghc-9.8.1 as a build compiler (base-4.19.0)\n\
-# # --\n\
-# $allow_newer\n\
-# # --\n\
-# extra-deps:\n\
-#   - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-${version}.tar.gz\n\
-#     ${ghc_lib_parser_sha256};\
-# g" | \
-#   sed -e "s;^resolver:.*$;resolver: ${resolver};g" > stack-head.yaml
-# else
-#   cat > stack-head.yaml <<EOF
-# resolver: $resolver
-# extra-deps:
-#   - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-${version}.tar.gz\n\
-#     ${ghc_lib_parser_sha256};\
-# ghc-options:
-#     "$DOLLAR$everything": -j
-#     "$DOLLAR$locals": -ddump-to-file -ddump-hi -Wall -Wno-name-shadowing -Wunused-imports
-# flags:
-#  ghc-lib-parser:
-#    threaded-rts: $threaded_rts
-#   ghc-lib-parser-ex:
-#     auto: false
-#     no-ghc-lib: false
-# packages:
-#   - .
-# EOF
-# fi
-
-stack_yaml=stack-head.yaml
-stack_yaml_flag="--stack-yaml $stack_yaml"
-# No need to pass $resolver_flag here, we fixed the resolver in
-# 'stack-head.yaml'.
-# cat "$stack_yaml"
-#eval "$runhaskell $stack_yaml_flag CI.hs -- $no_builds $stack_yaml_flag --version-tag $version"
 cabal run exe:ghc-lib-parser-ex-build-tool -- --version-tag $version
-
-ghc_lib_parser_ex_sha256=""
-if [ $(uname) == 'Darwin' ]; then
-  sha_ghc_lib_parser_ex=$(shasum -a 256 "$repo_dir"/ghc-lib-parser-ex/ghc-lib-parser-ex-"$version".tar.gz | awk '{ print $1 }')
-  ghc_lib_parser_ex_sha256="sha256: \"${sha_ghc_lib_parser_ex}\""
-fi
 
 # Hlint
 
 cd "$repo_dir"/hlint && git checkout .
-if [ -z "$ghc_lib_parser_sha256" ] || [ -z "$ghc_lib_parser_ex_sha256" ]; then
-  rm -f *.yaml.lock
-fi
 
 branch=$(git rev-parse --abbrev-ref HEAD)
 # if the flavor indicates ghc's master branch get on hlint's
@@ -404,57 +280,18 @@ else
   fi
 fi
 
-# We're stuck with only curated resolvers for hlint at this time.
-if [[ -z "$GHC_FLAVOR" \
-   || "$GHC_FLAVOR" == "ghc-master" \
-   || "$GHC_FLAVOR" == "ghc-9.10.1"
- ]]; then
-  # ghc-flavor >= ghc-master
-  resolver=lts-22.19 # ghc-9.6.4 (and it must provide os-string)
-else
-  resolver=lts-21.6 # ghc-9.4.5
-fi
-
-# Currently in sync with 'hlint/stack.yaml'.
-
-cat > stack-head.yaml <<EOF
-resolver: $resolver
+# Why 'allow-older'?
+# ghc-lib-parser versions of the form 0.x for example require this.
+cat > cabal.project<<EOF
+allow-newer: ghc-lib-parser-ex:ghc-lib-parser, hlint:ghc-lib-parser-ex, hlint:ghc-lib-parser
+allow-older: ghc-lib-parser-ex:ghc-lib-parser, hlint:ghc-lib-parser-ex, hlint:ghc-lib-parser
 packages:
-- .
-extra-deps:
-  - os-string-2.0.3
-  - unix-2.8.5.1
-  - directory-1.3.8.5
-  - process-1.6.20.0
-  - filepath-1.5.2.0
-  - Win32-2.14.0.0
-  - time-1.12.2
-  - archive: ${repo_dir_stripped}/ghc-lib/ghc-lib-parser-${version}.tar.gz
-    ${ghc_lib_parser_sha256}
-  - archive: ${repo_dir_stripped}/ghc-lib-parser-ex/ghc-lib-parser-ex-$version.tar.gz
-    ${ghc_lib_parser_ex_sha256}
-ghc-options:
-    "$DOLLAR$everything": -j
-    "$DOLLAR$locals": -ddump-to-file -ddump-hi -Werror=unused-imports -Werror=unused-local-binds -Werror=unused-top-binds -Werror=orphans
-flags:
- hlint:
-   ghc-lib: true
- ghc-lib-parser:
-   threaded-rts: $threaded_rts
- ghc-lib-parser-ex:
-   auto: false
-   no-ghc-lib: false
- directory:
-   os-string: true
- unix:
-   os-string: true
- Win32:
-   os-string: true
-# Allow out-of-bounds ghc-lib-parser and ghc-lib-parser-ex.
-allow-newer: true
+   ./hlint.cabal
+   ../ghc-lib-parser-ex/ghc-lib-parser-ex.cabal
+   ../ghc-lib/ghc-lib-parser/ghc-lib-parser.cabal
 EOF
 
-# phase: hlint: stack build/test
+# phase: hlint: build/test
 #if true; then
 if [ true ]; then
 # if ! [ "$no_builds" == --no-builds ]; then
@@ -466,18 +303,18 @@ if [ true ]; then
   fi
 
   # Build hlint.
-  eval "C_INCLUDE_PATH=$C_INCLUDE_PATH" "stack" "$stack_yaml_flag" "build"
+  eval "C_INCLUDE_PATH=$C_INCLUDE_PATH" "cabal" "build" "--ghc-options=-j" "exe:hlint"
 
   # Run its tests.
-  eval "C_INCLUDE_PATH=$C_INCLUDE_PATH" "stack" "$stack_yaml_flag" "run" "--" "--test"
+  eval "C_INCLUDE_PATH=$C_INCLUDE_PATH" "cabal" "run" "exe:hlint" "--" "--test"
 
   # Test there are no changes to 'hints.md'.
-  eval "C_INCLUDE_PATH=$C_INCLUDE_PATH" "stack" "$stack_yaml_flag" "run" "--" "hlint" "--generate-summary"
+  eval "C_INCLUDE_PATH=$C_INCLUDE_PATH" "cabal" "run" "exe:hlint" "--" "hlint" "--generate-summary"
 
   git diff --exit-code hints.md
 
   # Run it on its own source.
-  eval "C_INCLUDE_PATH=$C_INCLUDE_PATH" "stack" "$stack_yaml_flag" "run" "--" "src"
+  eval "C_INCLUDE_PATH=$C_INCLUDE_PATH" "cabal" "run" "exe:hlint" "--" "src"
 fi
 
 # --
@@ -512,7 +349,7 @@ else
   # sarif tests encode the current hlint version number
   sed -i'' "s/3.5/$version/g" tests/sarif.test # hack. see issue https://github.com/ndmitchell/hlint/issues/1492
 fi
-eval "stack" "$stack_yaml_flag" "sdist" "." "--tar-dir" "."
+eval "cabal" "sdist" "-o" "."
 
 # - Generate a cabal.project of
 #   - ghc-lib, ghc-lib-parser-ex, examples, hlint

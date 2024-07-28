@@ -24,7 +24,7 @@ opts:
 "
 usage="usage: $prog ARGS"
 
-ghc_version="$(ghc --version | sed -e 's/The Glorious Glasgow Haskell Compilation System, version //g' -e 's/^/ghc-/g')"
+ghc_version="ghc-$(echo -n "$(ghc --numeric-version)")"
 version_tag=""
 ghc_lib_dir=""
 ghc_lib_parser_ex_dir=""
@@ -88,14 +88,6 @@ if [ -d "$HOME/$ghc_version" ]; then
   PATH="$HOME/$ghc_version/bin:$PATH"
   export PATH
 fi
-
-# Make sure cabal-install is up-to-date with the most recent
-# available. At this time there aren't build plans for compilers >
-# ghc-9.2.4.
-# (PATH=$HOME/ghc-9.2.4/bin:$PATH; export PATH && \
-#      cabal update && \
-#      cabal new-install cabal-install --overwrite-policy=always \
-# )
 
 echo "cabal-install: $(which cabal)"
 echo "cabal-install version: $(cabal -V)"
@@ -164,7 +156,6 @@ fi
 constraints="constraints: $extra_constraints hlint +ghc-lib, ghc-lib-parser-ex -auto -no-ghc-lib, ghc-lib $threaded_rts, ghc-lib-parser $threaded_rts"
 
 cat > cabal.project<<EOF
-cat > cabal.project<<EOF
 packages: */*.cabal
 $allow_newer
 $constraints
@@ -202,18 +193,15 @@ fi
 
 # cabal new-haddock all
 if "$with_haddock"; then
-  eval "cabal" "new-haddock" "all"
+  eval "cabal" "haddock" "all"
 fi
 
-cabal_project="$build_dir_for_this_ghc/cabal.project"
-if [[ $(uname) == "Darwin" || $(uname) == "Linux" ]]; then
-  # these tests have issues on windows
-  echo -n > "$build_dir_for_this_ghc"/ghc-lib-test-mini-hlint "cabal -v0 new-run exe:ghc-lib-test-mini-hlint --project-file $cabal_project --  "
-  echo -n > "$build_dir_for_this_ghc"/ghc-lib-test-mini-compile "cabal -v0 new-run exe:ghc-lib-test-mini-compile --project-file $cabal_project --  "
-  (cd "ghc-lib-test-mini-hlint-$version_tag" && eval 'cabal' 'new-test' '--test-show-details' 'direct' '--project-file' "$cabal_project" '--test-options="--test-command ../ghc-lib-test-mini-hlint"')
-  (cd "ghc-lib-test-mini-compile-$version_tag" && eval 'cabal' 'new-test' '--test-show-details' 'direct' '--project-file' "$cabal_project" '--test-options="--test-command ../ghc-lib-test-mini-compile"')
-fi
-(cd "ghc-lib-parser-ex-$version_tag" && eval 'cabal' 'new-test' '--test-show-details' 'direct' '--project-file' "$cabal_project")
-(cd "hlint-$version_tag" && eval "cabal new-run exe:hlint" "--project-file" "$cabal_project" "--" "--test")
+cabal_project="$build_dir_for_this_ghc"/cabal.project
+echo -n > "$build_dir_for_this_ghc"/ghc-lib-test-mini-hlint "cabal run exe:ghc-lib-test-mini-hlint --project-dir .. --  "
+echo -n > "$build_dir_for_this_ghc"/ghc-lib-test-mini-compile "cabal run exe:ghc-lib-test-mini-compile --project-dir .. --  "
+(cd ghc-lib-test-mini-hlint-"$version_tag" && eval 'cabal' 'test' '--project-dir' '..' '--test-show-details' 'direct' '--test-options="--color always --test-command ../ghc-lib-test-mini-hlint"')
+(cd ghc-lib-test-mini-compile-"$version_tag" && eval 'cabal' 'test' '--project-dir' '..' '--test-show-details' 'direct' '--test-options="--color always --test-command ../ghc-lib-test-mini-compile"')
+(cd ghc-lib-parser-ex-"$version_tag" && eval 'cabal' 'test' '--project-dir' '..' '--test-show-details' 'direct' '--test-options="--color always"')
+(cd hlint-"$version_tag" && eval 'cabal' 'run' 'exe:hlint' '--project-dir' '..' '--' '--test')
 
 exit 0
