@@ -195,7 +195,7 @@ fi
 
 # ghc-lib
 
-cmd="cabal run exe:ghc-lib-build-tool -- $no_checkout_flag $no_builds --ghc-flavor "
+cmd="cabal run exe:ghc-lib-build-tool -- --ghc-flavor "
 
 if [ -z "$GHC_FLAVOR" ]; then
     eval "$cmd" "$HEAD"
