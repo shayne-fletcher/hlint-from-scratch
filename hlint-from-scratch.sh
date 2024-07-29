@@ -137,7 +137,7 @@ everything="everything"
 
 cd "$repo_dir"/ghc-lib
 
-git checkout ghc-next
+#git checkout ghc-next
 
 if ! [[ -f ./ghc-lib-gen.cabal ]]; then
     echo "Missing 'ghc-lib-gen.cabal'."
@@ -195,7 +195,7 @@ fi
 
 # ghc-lib
 
-cmd="cabal run exe:ghc-lib-build-tool -- --ghc-flavor "
+cmd="cabal run exe:ghc-lib-build-tool -- $no_builds --ghc-flavor "
 
 if [ -z "$GHC_FLAVOR" ]; then
     eval "$cmd" "$HEAD"
