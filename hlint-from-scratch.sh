@@ -252,7 +252,7 @@ packages:
    ../ghc-lib/ghc-lib-parser/ghc-lib-parser.cabal
 EOF
 
-cabal run exe:ghc-lib-parser-ex-build-tool -- --version-tag $version
+cabal run exe:ghc-lib-parser-ex-build-tool -- $no_builds --version-tag $version
 
 # Hlint
 
