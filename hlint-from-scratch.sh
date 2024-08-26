@@ -268,11 +268,11 @@ if [[ -z "$GHC_FLAVOR" \
     echo "Not on ghc-next. Trying 'git checkout ghc-next'"
     git checkout ghc-next
   fi
-elif [[ "$GHC_FLAVOR" == "ghc-9.10.1" ]]; then
-  if [[ "$branch" != "ghc-9.10.1" ]]; then
-    echo "Not on ghc-9.10.1. Trying 'git checkout ghc-9.10.1'"
-    git checkout ghc-9.10.1
-  fi
+# elif [[ "$GHC_FLAVOR" == "ghc-9.10.1" ]]; then
+#   if [[ "$branch" != "ghc-9.10.1" ]]; then
+#     echo "Not on ghc-9.10.1. Trying 'git checkout ghc-9.10.1'"
+#     git checkout ghc-9.10.1
+#   fi
 else
   if [[ "$branch" != "master" ]]; then
       echo "Not on master. Trying 'git checkout master'"
