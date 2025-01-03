@@ -137,6 +137,7 @@ everything="everything"
 
 cd "$repo_dir"/ghc-lib
 
+# Don't checkout ghc-next. Run with whatever is checked out.
 git checkout ghc-next
 
 if ! [[ -f ./ghc-lib-gen.cabal ]]; then
@@ -171,12 +172,12 @@ if [ -z "$GHC_FLAVOR" ]; then
   echo "CI.hs (last tested at): $current"
   # Skip this check in CI
   set +u
-  if [ -z "${GHCLIB_AZURE}" ]; then
-      if [[ "$current" == "$HEAD" ]]; then
-          echo "The last \"tested at\" SHA (\"$current\") hasn't changed"
-          exit 99 # So as to stop e.g. stop 'hlint-from-scratch-matrix-build.sh' too.
-      fi
-  fi
+  # if [ -z "${GHCLIB_AZURE}" ]; then
+  #     if [[ "$current" == "$HEAD" ]]; then
+  #         echo "The last \"tested at\" SHA (\"$current\") hasn't changed"
+  #         exit 99 # So as to stop e.g. stop 'hlint-from-scratch-matrix-build.sh' too.
+  #     fi
+  # fi
   set -u
 
   # $HEAD is new. Summarize the new commits.
@@ -195,7 +196,8 @@ fi
 
 # ghc-lib
 
-cmd="cabal run exe:ghc-lib-build-tool -- $no_builds --ghc-flavor "
+additional_cabal_flags=""
+cmd="cabal run exe:ghc-lib-build-tool $additional_cabal_flags -- $no_builds --ghc-flavor "
 
 if [ -z "$GHC_FLAVOR" ]; then
     eval "$cmd" "$HEAD"
@@ -228,13 +230,13 @@ if [[ -z "$GHC_FLAVOR" \
     echo "Not on ghc-next. Trying 'git checkout ghc-next'"
     git checkout ghc-next
   fi
-# # if the flavor indicates ghc's 9.10.1 branch get on
-# # ghc-lib-parser-ex's 'ghc-next' branch (yes, ghc-next) ...
-# elif [[ "$GHC_FLAVOR" == "ghc-9.10.1" ]]; then
-#   if [[ "$branch" != "ghc-next" ]]; then
-#     echo "Not on ghc-next. Trying 'git checkout ghc-next'"
-#     git checkout ghc-next
-#   fi
+# if the flavor indicates ghc's 9.12.1 branch get on
+# ghc-lib-parser-ex's 'ghc-next' branch (yes, ghc-next) ...
+elif [[ "$GHC_FLAVOR" == "ghc-9.12.1" ]]; then
+  if [[ "$branch" != "ghc-next" ]]; then
+    echo "Not on ghc-next. Trying 'git checkout ghc-next'"
+    git checkout ghc-next
+  fi
 #... else it's a released flavor, get on branch ghc-lib-parser-ex's
 #'master' branch
 else
@@ -244,7 +246,10 @@ else
   fi
 fi
 
+additional_text=""
+
 cat > cabal.project<<EOF
+$additional_text
 allow-newer: ghc-lib-parser-ex:ghc-lib-parser
 allow-older: ghc-lib-parser-ex:ghc-lib-parser
 packages:
@@ -268,11 +273,11 @@ if [[ -z "$GHC_FLAVOR" \
     echo "Not on ghc-next. Trying 'git checkout ghc-next'"
     git checkout ghc-next
   fi
-# elif [[ "$GHC_FLAVOR" == "ghc-9.10.1" ]]; then
-#   if [[ "$branch" != "ghc-9.10.1" ]]; then
-#     echo "Not on ghc-9.10.1. Trying 'git checkout ghc-9.10.1'"
-#     git checkout ghc-9.10.1
-#   fi
+elif [[ "$GHC_FLAVOR" == "ghc-9.12.1" ]]; then
+  if [[ "$branch" != "ghc-9.12.1" ]]; then
+    echo "Not on ghc-9.12.1. Trying 'git checkout ghc-9.12.1'"
+    git checkout ghc-9.12.1
+  fi
 else
   if [[ "$branch" != "master" ]]; then
       echo "Not on master. Trying 'git checkout master'"
@@ -280,9 +285,17 @@ else
   fi
 fi
 
+additional_text=""
+ghc_version=$(ghc --numeric-version)
+if [[ "$ghc_version" == "9.12.1" ]]; then
+    additional_text="if impl(ghc >= 9.12.1)
+  allow-newer: ghc-prim, base, template-haskell"
+fi
+
 # Why 'allow-older'?
 # ghc-lib-parser versions of the form 0.x for example require this.
 cat > cabal.project<<EOF
+$additional_text
 allow-newer: ghc-lib-parser-ex:ghc-lib-parser, hlint:ghc-lib-parser-ex, hlint:ghc-lib-parser
 allow-older: ghc-lib-parser-ex:ghc-lib-parser, hlint:ghc-lib-parser-ex, hlint:ghc-lib-parser
 packages:
