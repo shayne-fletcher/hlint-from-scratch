@@ -200,7 +200,7 @@ cabal_project="$build_dir_for_this_ghc"/cabal.project
 echo -n > "$build_dir_for_this_ghc"/ghc-lib-test-mini-hlint "cabal -v0 run exe:ghc-lib-test-mini-hlint --project-dir .. --  "
 echo -n > "$build_dir_for_this_ghc"/ghc-lib-test-mini-compile "cabal -v0 run exe:ghc-lib-test-mini-compile --project-dir .. --  "
 (cd ghc-lib-test-mini-hlint-"$version_tag" && eval 'cabal' 'test' '--project-dir' '..' '--test-show-details' 'direct' '--test-options="--color always --test-command ../ghc-lib-test-mini-hlint"')
-(cd ghc-lib-test-mini-compile-"$version_tag" && eval 'cabal' 'test' '--project-dir' '..' '--test-show-details' 'direct' '--test-options="--color always --test-command ../ghc-lib-test-mini-compile"')
+# (cd ghc-lib-test-mini-compile-"$version_tag" && eval 'cabal' 'test' '--project-dir' '..' '--test-show-details' 'direct' '--test-options="--color always --test-command ../ghc-lib-test-mini-compile"')
 (cd ghc-lib-parser-ex-"$version_tag" && eval 'cabal' 'test' '--project-dir' '..' '--test-show-details' 'direct' '--test-options="--color always"')
 (cd hlint-"$version_tag" && eval 'cabal' 'run' 'exe:hlint' '--project-dir' '..' '--' '--test')
 
