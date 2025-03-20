@@ -14,7 +14,7 @@
 # - Quickest
 #   - `hlint-from-scratch --ghc-flavor="" "--no-checkout --no-builds --no-cabal --no-haddock`
 
-set -eo pipefail
+# set -eo pipefail
 
 prog=$(basename "$0")
 args="
@@ -137,8 +137,7 @@ everything="everything"
 
 cd "$repo_dir"/ghc-lib
 
-# Don't checkout ghc-next. Run with whatever is checked out.
-# git checkout ghc-next
+git checkout ghc-next
 
 if ! [[ -f ./ghc-lib-gen.cabal ]]; then
     echo "Missing 'ghc-lib-gen.cabal'."
@@ -317,8 +316,6 @@ if [ true ]; then
 
   # Build hlint.
   eval "C_INCLUDE_PATH=$C_INCLUDE_PATH" "cabal" "build" "--ghc-options=-j" "exe:hlint"
-
-  set +e # Disable failing.
 
   # Run its tests.
   eval "C_INCLUDE_PATH=$C_INCLUDE_PATH" "cabal" "run" "exe:hlint" "--" "--test"
