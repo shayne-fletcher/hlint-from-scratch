@@ -14,7 +14,7 @@
 # - Quickest
 #   - `hlint-from-scratch --ghc-flavor="" "--no-checkout --no-builds --no-cabal --no-haddock`
 
-# set -eo pipefail
+set -eo pipefail
 
 prog=$(basename "$0")
 args="
