@@ -140,9 +140,11 @@ everything="everything"
 
 cd "$repo_dir"/ghc-lib
 
+set +u
 if [[ -n "$GHCLIB_AZURE" ]]; then
   git checkout ghc-next
 fi
+set -u
 
 if ! [[ -f ./ghc-lib-gen.cabal ]]; then
     echo "Missing 'ghc-lib-gen.cabal'."
@@ -188,6 +190,10 @@ if [ -z "$GHC_FLAVOR" ]; then
   (cd ghc && PAGER=cat git show $current..$HEAD --compact-summary)
    echo "-- "
 fi
+
+set +u
+: "${GHC_COMMIT_SHA:=}"
+set -u
 
 today=$(date -u +'%Y-%m-%d')
 echo "Using: $GHC_COMMIT_SHA"
