@@ -14,6 +14,9 @@
 # - Quickest
 #   - `hlint-from-scratch --ghc-flavor="" "--no-checkout --no-builds --no-cabal --no-haddock`
 
+# An interesting command
+# `rm -f cabal.project && GHC_COMMIT_SHA=dbd16dac45610e211241609567bcedf3afd0527a ../hlint-from-scratch/hlint-from-scratch.sh --ghc-flavor="dbd16dac45610e211241609567bcedf3afd0527a" --no-builds --no-cabal --no-checkout`
+
 set -eo pipefail
 
 prog=$(basename "$0")
@@ -137,7 +140,9 @@ everything="everything"
 
 cd "$repo_dir"/ghc-lib
 
-git checkout ghc-next
+if [[ -n "$GHCLIB_AZURE" ]]; then
+  git checkout ghc-next
+fi
 
 if ! [[ -f ./ghc-lib-gen.cabal ]]; then
     echo "Missing 'ghc-lib-gen.cabal'."
@@ -185,12 +190,20 @@ if [ -z "$GHC_FLAVOR" ]; then
 fi
 
 today=$(date -u +'%Y-%m-%d')
+echo "Using: $GHC_COMMIT_SHA"
+
 if [[ -z "$GHC_FLAVOR" \
-   || "$GHC_FLAVOR" == "ghc-master" ]]; then
-  version="0.""$(date -u +'%Y%m%d')"
+   || "$GHC_FLAVOR" == "ghc-master" \
+   || "$GHC_FLAVOR" == "$GHC_COMMIT_SHA" ]]; then
+  version="0.$(date -u +'%Y%m%d')"
 else
-  flavor=$([[ "$GHC_FLAVOR" =~ (ghc\-)([0-9])\.([0-9][0-9]?)\.([0-9]) ]] && echo "${BASH_REMATCH[2]}.${BASH_REMATCH[3]}.${BASH_REMATCH[4]}")
-  version="$flavor"".""$(date -u +'%Y%m%d')"
+  if [[ "$GHC_FLAVOR" =~ ghc-([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+    flavor="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+    version="$flavor.$(date -u +'%Y%m%d')"
+  else
+    echo "Unrecognized GHC_FLAVOR format: $GHC_FLAVOR" >&2
+    exit 1
+  fi
 fi
 
 # ghc-lib
@@ -224,7 +237,9 @@ branch=$(git rev-parse --abbrev-ref HEAD)
 # if the flavor indicates ghc's master branch get on
 # ghc-lib-parser-ex's 'ghc-next' branch ...
 if [[ -z "$GHC_FLAVOR" \
-   || "$GHC_FLAVOR" == "ghc-master" ]]; then
+   || "$GHC_FLAVOR" == "ghc-master" \
+   || "$GHC_FLAVOR" == "$GHC_COMMIT_SHA"
+ ]]; then
   if [[ "$branch" != "ghc-next" ]]; then
     echo "Not on ghc-next. Trying 'git checkout ghc-next'"
     git checkout ghc-next
@@ -266,7 +281,8 @@ branch=$(git rev-parse --abbrev-ref HEAD)
 # if the flavor indicates ghc's master branch get on hlint's
 # 'ghc-next' branch ...
 if [[ -z "$GHC_FLAVOR" \
-   || "$GHC_FLAVOR" == "ghc-master"
+   || "$GHC_FLAVOR" == "ghc-master" \
+   || "$GHC_FLAVOR" == "$GHC_COMMIT_SHA"
  ]]; then
   if [[ "$branch" != "ghc-next" ]]; then
     echo "Not on ghc-next. Trying 'git checkout ghc-next'"
