@@ -157,6 +157,10 @@ if ! [[ -d ./ghc ]]; then
     exit 1
 fi
 
+set +u
+: "${GHCLIB_AZURE=}"
+set -u
+
 # It's common for the git fetch step to report errors of the form
 # "fatal: remote error: upload-pack: not our ref SHA culminating with
 # "Errors during submodule fetch:..." and exit with a non-zero code.
@@ -175,16 +179,16 @@ if [ -z "$GHC_FLAVOR" ]; then
 
   # If $HEAD agrees with the "last tested at" SHA in CI.hs stop here.
   current=$(grep "current = .*" CI.hs | grep -o "\".*\"" | cut -d "\"" -f 2)
+
+
   echo "CI.hs (last tested at): $current"
   # Skip this check in CI
-  set +u
-  # if [ -z "${GHCLIB_AZURE}" ]; then
-  #     if [[ "$current" == "$HEAD" ]]; then
-  #         echo "The last \"tested at\" SHA (\"$current\") hasn't changed"
-  #         exit 99 # So as to stop e.g. stop 'hlint-from-scratch-matrix-build.sh' too.
-  #     fi
-  # fi
-  set -u
+  if [ -z "${GHCLIB_AZURE}" ]; then
+      if [[ "$current" == "$HEAD" ]]; then
+          echo "The last \"tested at\" SHA (\"$current\") hasn't changed"
+          exit 99 # So as to stop e.g. stop 'hlint-from-scratch-matrix-build.sh' too.
+      fi
+  fi
 
   # $HEAD is new. Summarize the new commits.
   (cd ghc && PAGER=cat git show $current..$HEAD --compact-summary)
