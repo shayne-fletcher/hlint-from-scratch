@@ -254,13 +254,13 @@ if [[ -z "$GHC_FLAVOR" \
     echo "Not on ghc-next. Trying 'git checkout ghc-next'"
     git checkout ghc-next
   fi
-# # if the flavor indicates ghc's 9.12.1 branch get on
-# # ghc-lib-parser-ex's 'ghc-next' branch (yes, ghc-next) ...
-# elif [[ "$GHC_FLAVOR" == "ghc-9.12.1" ]]; then
-#   if [[ "$branch" != "ghc-next" ]]; then
-#     echo "Not on ghc-next. Trying 'git checkout ghc-next'"
-#     git checkout ghc-next
-#   fi
+# if the flavor indicates ghc's 9.14.1 branch get on
+# ghc-lib-parser-ex's 'ghc-next' branch (yes, ghc-next) ...
+elif [[ "$GHC_FLAVOR" == "ghc-9.14.1" ]]; then
+  if [[ "$branch" != "ghc-next" ]]; then
+    echo "Not on ghc-next. Trying 'git checkout ghc-next'"
+    git checkout ghc-next
+  fi
 #... else it's a released flavor, get on branch ghc-lib-parser-ex's
 #'master' branch
 else
@@ -298,11 +298,11 @@ if [[ -z "$GHC_FLAVOR" \
     echo "Not on ghc-next. Trying 'git checkout ghc-next'"
     git checkout ghc-next
   fi
-# elif [[ "$GHC_FLAVOR" == "ghc-9.12.1" ]]; then
-#   if [[ "$branch" != "ghc-9.12.1" ]]; then
-#     echo "Not on ghc-9.12.1. Trying 'git checkout ghc-9.12.1'"
-#     git checkout ghc-9.12.1
-#   fi
+elif [[ "$GHC_FLAVOR" == "ghc-9.14.1" ]]; then
+  if [[ "$branch" != "ghc-9.14.1" ]]; then
+    echo "Not on ghc-9.14.1. Trying 'git checkout ghc-9.14.1'"
+    git checkout ghc-9.14.1
+  fi
 else
   if [[ "$branch" != "master" ]]; then
       echo "Not on master. Trying 'git checkout master'"
